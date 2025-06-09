@@ -1,0 +1,43 @@
+import 'package:flutter/material.dart';
+
+class FontTestScreen extends StatelessWidget {
+  const FontTestScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Font Test',
+          style: TextStyle(fontFamily: 'PlayfairDisplay', color: Colors.white),
+        ),
+        backgroundColor: Colors.black,
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Playfair Display Regular',
+              style: TextStyle(
+                fontFamily: 'PlayfairDisplay',
+                fontSize: 24,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Playfair Display Bold',
+              style: TextStyle(
+                fontFamily: 'PlayfairDisplay',
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
