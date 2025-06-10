@@ -25,7 +25,7 @@ Create flirty chat screenshots for memes, pranks, or social media with fully cus
 - **Flutter** – Cross-platform mobile development
 - **Dart** – App programming language
 - **Gemini APIs** – AI-powered generation
-- Supabase – Backend services (auth)
+- **Supabase** – Backend services (auth)
 
 ---
 
