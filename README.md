@@ -1,16 +1,47 @@
-# rizzexai
+# 💘 RizzexAI - Your Flirty Wingman
 
-A new Flutter project.
+RizzexAI is a fun, AI-powered mobile application built with Flutter that helps users upgrade their romantic game. From generating witty pickup lines to revamping dating bios and even forecasting your zodiac-based romantic fate — RizzexAI is your go-to app for dating edge and flirty fun.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## 🌟 Features
 
-A few resources to get you started if this is your first Flutter project:
+### ⚡ 1. Pickup Line Generator
+Generate smooth, clever, or cheeky pickup lines tailored for your mood or context. Uses AI to generate lines that work.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### ✍️ 2. Bio Upgrader
+Improve your dating app bio instantly. Just paste your existing bio and let RizzexAI rewrite it with charm and clarity.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 🔮 3. Zodiac Rizz Forecast
+Get daily romantic predictions based on your zodiac sign. This feature combines astrology and AI for fun, sharable forecasts.
+
+### 📷 4. Chat Screenshot Generator
+Create flirty chat screenshots for memes, pranks, or social media with fully customizable text.
+
+---
+
+[View Live Demo](https://www.youtube.com/shorts/pA7_STTcAwA) 
+
+
+## 🛠️ Tech Stack
+
+- **Flutter** – Cross-platform mobile development
+- **Dart** – App programming language
+- **Gemini APIs** – AI-powered generation
+- **Supabase** – Backend services (auth)
+
+---
+
+## 📱 UI Design
+
+- Dark mode default
+- Clean and minimal UX built with `Basis Grotesque Arabic Pro` and `Playfair Display` font
+
+---
+
+## 🔧 Setup Instructions
+
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/yourusername/rizzexai.git
+   cd rizzexai
