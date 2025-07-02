@@ -6,6 +6,7 @@ import 'zodiac_forecast_screen.dart';
 import 'package:rizzexai/services/auth_service.dart';
 import 'auth/sign_in_screen.dart';
 import 'profile_screen.dart';
+import 'notes_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -63,6 +64,7 @@ class HomeScreen extends StatelessWidget {
               Tab(
                   icon: Icon(Icons.star, color: Colors.white),
                   text: "Zodiac Forecast"),
+              Tab(icon: Icon(Icons.note, color: Colors.white), text: "Notes"),
               Tab(
                   icon: Icon(Icons.person, color: Colors.white),
                   text: "Profile"),
@@ -75,6 +77,7 @@ class HomeScreen extends StatelessWidget {
             PickupLineScreen(),
             BioUpgraderScreen(),
             ZodiacForecastScreen(),
+            NotesScreen(),
             ProfileScreen(),
           ],
         ),

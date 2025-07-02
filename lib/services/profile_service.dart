@@ -1,5 +1,20 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:developer' as developer;
+import 'package:hive/hive.dart';
+
+@HiveType(typeId: 0)
+class Note extends HiveObject {
+  @HiveField(0)
+  String title;
+
+  @HiveField(1)
+  String content;
+
+  @HiveField(2)
+  DateTime createdAt;
+
+  Note({required this.title, required this.content, required this.createdAt});
+}
 
 class ProfileService {
   final _supabase = Supabase.instance.client;
