@@ -32,6 +32,13 @@ class _PickupLineScreenState extends State<PickupLineScreen> {
     }
   }
 
+  Future<void> _refresh() async {
+    setState(() {
+      _controller.clear();
+      _pickupLine = '';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,8 +53,10 @@ class _PickupLineScreenState extends State<PickupLineScreen> {
         ),
         centerTitle: true,
       ),
-      body: SafeArea(
+      body: RefreshIndicator(
+        onRefresh: _refresh,
         child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           child: ConstrainedBox(
             constraints: BoxConstraints(

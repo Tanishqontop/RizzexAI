@@ -73,57 +73,69 @@ class _ChatScreenshotScreenState extends State<ChatScreenshotScreen> {
     ).showSnackBar(const SnackBar(content: Text("Copied to clipboard!")));
   }
 
+  Future<void> _refresh() async {
+    setState(() {
+      _image = null;
+      _extractedText = '';
+      _responseText = '';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: ListView(
-        children: [
-          ElevatedButton.icon(
-            onPressed: _pickImage,
-            icon: const Icon(Icons.upload_file),
-            label: const Text('Upload Chat Screenshot'),
-          ),
-          if (_image != null) ...[
-            Image.file(_image!),
-            const SizedBox(height: 10),
-            Card(
-              elevation: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(_extractedText),
-              ),
+      child: RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            ElevatedButton.icon(
+              onPressed: _pickImage,
+              icon: const Icon(Icons.upload_file),
+              label: const Text('Upload Chat Screenshot'),
             ),
-            ElevatedButton(
-              onPressed: getFlirtyReplies,
-              child: const Text('Generate Flirty Replies'),
-            ),
-          ],
-          if (_loading) const Center(child: CircularProgressIndicator()),
-          if (_responseText.isNotEmpty)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                const Text(
-                  "AI-Generated Replies:",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            if (_image != null) ...[
+              Image.file(_image!),
+              const SizedBox(height: 10),
+              Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(_extractedText),
                 ),
-                ..._responseText
-                    .split('\n')
-                    .where((line) => line.trim().isNotEmpty)
-                    .map(
-                      (reply) => ListTile(
-                        title: Text(reply),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.copy),
-                          onPressed: () => copyToClipboard(reply),
+              ),
+              ElevatedButton(
+                onPressed: getFlirtyReplies,
+                child: const Text('Generate Flirty Replies'),
+              ),
+            ],
+            if (_loading) const Center(child: CircularProgressIndicator()),
+            if (_responseText.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  const Text(
+                    "AI-Generated Replies:",
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  ..._responseText
+                      .split('\n')
+                      .where((line) => line.trim().isNotEmpty)
+                      .map(
+                        (reply) => ListTile(
+                          title: Text(reply),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.copy),
+                            onPressed: () => copyToClipboard(reply),
+                          ),
                         ),
                       ),
-                    ),
-              ],
-            ),
-        ],
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -37,12 +37,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
+    print('Loading profile...');
     try {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
       });
       final profile = await _profileService.getProfile(_currentUser!.id);
+      print('Profile loaded: ' + profile.toString());
       if (mounted) {
         setState(() {
           if (profile != null) {
@@ -54,6 +56,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e) {
+      print('Error loading profile: $e');
       if (mounted) {
         setState(() {
           _errorMessage = 'Error loading profile: ${e.toString()}';
@@ -146,144 +149,224 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_errorMessage != null) {
-      return Center(
-          child:
-              Text(_errorMessage!, style: const TextStyle(color: Colors.red)));
-    }
-
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: Colors.red));
-    }
-
+    print('Building profile screen. isLoading: $_isLoading');
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 48,
-                    backgroundColor: Colors.white24,
-                    backgroundImage: _avatarFile != null
-                        ? FileImage(_avatarFile!)
-                        : (_avatarUrl != null && _avatarUrl!.isNotEmpty)
-                            ? NetworkImage(_avatarUrl!) as ImageProvider
-                            : null,
-                    child: (_avatarFile == null &&
-                            (_avatarUrl == null || _avatarUrl!.isEmpty))
-                        ? const Icon(Icons.person, size: 48, color: Colors.grey)
-                        : null,
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: PopupMenuButton<ImageSource>(
-                      icon: const CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Colors.red,
-                        child: Icon(Icons.camera_alt,
-                            color: Colors.white, size: 18),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: const Text('Profile', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.red,
+        centerTitle: true,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: RefreshIndicator(
+        onRefresh: _loadProfile,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(20.0),
+          child: _isLoading
+              ? Container(
+                  alignment: Alignment.center,
+                  height: MediaQuery.of(context).size.height * 0.5,
+                  child: const CircularProgressIndicator(color: Colors.red),
+                )
+              : _errorMessage != null
+                  ? Container(
+                      alignment: Alignment.center,
+                      height: MediaQuery.of(context).size.height * 0.5,
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(color: Colors.red),
                       ),
-                      onSelected: _pickAvatar,
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(
-                          value: ImageSource.camera,
-                          child: Text('Take Photo'),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Card(
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 24, horizontal: 16),
+                            child: Column(
+                              children: [
+                                Stack(
+                                  alignment: Alignment.bottomRight,
+                                  children: [
+                                    CircleAvatar(
+                                      radius: 50,
+                                      backgroundColor: Colors.grey[200],
+                                      backgroundImage: _avatarFile != null
+                                          ? FileImage(_avatarFile!)
+                                          : (_avatarUrl != null &&
+                                                  _avatarUrl!.isNotEmpty)
+                                              ? NetworkImage(_avatarUrl!)
+                                                  as ImageProvider
+                                              : null,
+                                      child: (_avatarFile == null &&
+                                              (_avatarUrl == null ||
+                                                  _avatarUrl!.isEmpty))
+                                          ? const Icon(Icons.person,
+                                              size: 50, color: Colors.grey)
+                                          : null,
+                                    ),
+                                    Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: Material(
+                                        color: Colors.red,
+                                        shape: const CircleBorder(),
+                                        child: IconButton(
+                                          icon: const Icon(Icons.camera_alt,
+                                              color: Colors.white, size: 20),
+                                          onPressed: () async {
+                                            final source =
+                                                await showModalBottomSheet<
+                                                    ImageSource>(
+                                              context: context,
+                                              shape:
+                                                  const RoundedRectangleBorder(
+                                                borderRadius:
+                                                    BorderRadius.vertical(
+                                                        top: Radius.circular(
+                                                            20)),
+                                              ),
+                                              builder: (context) => SafeArea(
+                                                child: Column(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    ListTile(
+                                                      leading: const Icon(
+                                                          Icons.camera_alt),
+                                                      title: const Text(
+                                                          'Take Photo'),
+                                                      onTap: () =>
+                                                          Navigator.pop(
+                                                              context,
+                                                              ImageSource
+                                                                  .camera),
+                                                    ),
+                                                    ListTile(
+                                                      leading: const Icon(
+                                                          Icons.photo_library),
+                                                      title: const Text(
+                                                          'Choose from Gallery'),
+                                                      onTap: () =>
+                                                          Navigator.pop(
+                                                              context,
+                                                              ImageSource
+                                                                  .gallery),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                            if (source != null)
+                                              _pickAvatar(source);
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                TextField(
+                                  controller: _usernameController,
+                                  style: const TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold),
+                                  decoration: InputDecoration(
+                                    labelText: 'Username',
+                                    labelStyle:
+                                        const TextStyle(color: Colors.red),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide:
+                                          const BorderSide(color: Colors.red),
+                                    ),
+                                  ),
+                                ),
+                                if (_usernameController.text.isEmpty)
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 8.0),
+                                    child: Text('No username loaded.',
+                                        style: TextStyle(color: Colors.red)),
+                                  ),
+                                const SizedBox(height: 16),
+                                TextField(
+                                  controller: _bioController,
+                                  style: const TextStyle(color: Colors.black),
+                                  maxLines: 3,
+                                  decoration: InputDecoration(
+                                    labelText: 'Bio',
+                                    labelStyle:
+                                        const TextStyle(color: Colors.red),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide:
+                                          const BorderSide(color: Colors.red),
+                                    ),
+                                  ),
+                                ),
+                                if (_bioController.text.isEmpty)
+                                  const Padding(
+                                    padding: EdgeInsets.only(top: 8.0),
+                                    child: Text('No bio loaded.',
+                                        style: TextStyle(color: Colors.red)),
+                                  ),
+                                const SizedBox(height: 24),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    ElevatedButton.icon(
+                                      onPressed: _saveProfile,
+                                      icon: const Icon(Icons.save),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 24, vertical: 12),
+                                      ),
+                                      label: const Text('Save Profile'),
+                                    ),
+                                    const SizedBox(width: 16),
+                                    ElevatedButton.icon(
+                                      onPressed: _logout,
+                                      icon: const Icon(Icons.logout),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.grey[800],
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 24, vertical: 12),
+                                      ),
+                                      label: const Text('Log Out'),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                        const PopupMenuItem(
-                          value: ImageSource.gallery,
-                          child: Text('Choose from Gallery'),
-                        ),
+                        const SizedBox(height: 32),
                       ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Username:',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _usernameController,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Enter your username',
-                hintStyle: TextStyle(color: Colors.grey[700]),
-                border: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
-                ),
-                enabledBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white70),
-                ),
-                focusedBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Bio:',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _bioController,
-              style: const TextStyle(color: Colors.white),
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: 'Enter your bio',
-                hintStyle: TextStyle(color: Colors.grey[700]),
-                border: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white),
-                ),
-                enabledBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white70),
-                ),
-                focusedBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Center(
-              child: ElevatedButton(
-                onPressed: _saveProfile,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('Save Profile'),
-              ),
-            ),
-            const Spacer(),
-            Center(
-              child: ElevatedButton(
-                onPressed: _logout,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                ),
-                child: const Text('Log Out'),
-              ),
-            ),
-            const SizedBox(height: 32),
-          ],
         ),
       ),
     );

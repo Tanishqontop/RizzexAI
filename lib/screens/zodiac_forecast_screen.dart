@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/zodiac_service.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class ZodiacForecastScreen extends StatefulWidget {
   const ZodiacForecastScreen({super.key});
@@ -39,6 +40,13 @@ class _ZodiacForecastScreenState extends State<ZodiacForecastScreen> {
     });
   }
 
+  Future<void> _refresh() async {
+    setState(() {
+      _selectedSign = null;
+      _forecast = '';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,9 +60,11 @@ class _ZodiacForecastScreenState extends State<ZodiacForecastScreen> {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
           children: [
             DropdownButtonFormField<String>(
               decoration: const InputDecoration(
@@ -75,9 +85,13 @@ class _ZodiacForecastScreenState extends State<ZodiacForecastScreen> {
             const SizedBox(height: 16),
             if (_loading) const CircularProgressIndicator(),
             if (_forecast.isNotEmpty)
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Text(_forecast, style: const TextStyle(fontSize: 16)),
+              Padding(
+                padding: const EdgeInsets.only(top: 16.0),
+                child: MarkdownBody(
+                  data: _forecast,
+                  styleSheet: MarkdownStyleSheet(
+                    p: const TextStyle(fontSize: 16),
+                  ),
                 ),
               ),
           ],
