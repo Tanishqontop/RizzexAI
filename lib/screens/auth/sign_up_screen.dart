@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../home_screen.dart';
 import 'sign_in_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -54,6 +55,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
+  Future<void> signInWithGoogle(BuildContext context) async {
+    try {
+      await Supabase.instance.client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: 'io.supabase.flutter://login-callback/',
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Google sign-in failed: $e')),
+      );
+    }
+  }
+
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter your email';
@@ -89,7 +103,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
       backgroundColor: const Color(0xFFF6F7FB),
       body: Stack(
         children: [
-          // Gradient background
           Container(
             height: size.height * 0.38,
             decoration: const BoxDecoration(
@@ -104,17 +117,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             ),
           ),
-          // Main content
           SingleChildScrollView(
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: size.height,
-              ),
+              constraints: BoxConstraints(minHeight: size.height),
               child: IntrinsicHeight(
                 child: Column(
                   children: [
                     const SizedBox(height: 60),
-                    // App name
                     const Text(
                       'RizzexAI',
                       style: TextStyle(
@@ -125,7 +134,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    // Card
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 18.0),
                       child: Container(
@@ -167,7 +175,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 28),
-                              // Email field
                               TextFormField(
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,
@@ -187,7 +194,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 validator: _validateEmail,
                               ),
                               const SizedBox(height: 18),
-                              // Password field
                               TextFormField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
@@ -228,7 +234,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                               ],
                               const SizedBox(height: 24),
-                              // Sign up button
                               SizedBox(
                                 width: double.infinity,
                                 height: 48,
@@ -281,7 +286,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ),
                               ),
                               const SizedBox(height: 16),
-                              // Divider with text
                               Row(
                                 children: [
                                   const Expanded(
@@ -303,15 +307,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                 ],
                               ),
                               const SizedBox(height: 16),
-                              // Social buttons
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Expanded(
                                     child: OutlinedButton.icon(
-                                      onPressed: () {
-                                        // TODO: Implement Google sign-up
-                                      },
+                                      onPressed: () =>
+                                          signInWithGoogle(context),
                                       icon: Image.asset(
                                         'assets/google.png',
                                         height: 22,
@@ -334,7 +336,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   Expanded(
                                     child: OutlinedButton.icon(
                                       onPressed: () {
-                                        // TODO: Implement Facebook sign-up
+                                        // TODO: Facebook sign-in
                                       },
                                       icon: Image.asset(
                                         'assets/facebook.png',
@@ -362,7 +364,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // Already have an account? Sign In
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [

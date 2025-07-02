@@ -5,6 +5,7 @@ import 'bio_upgrader_screen.dart';
 import 'zodiac_forecast_screen.dart';
 import 'package:rizzexai/services/auth_service.dart';
 import 'auth/sign_in_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -12,7 +13,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
+      length: 5,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFFFF0000),
@@ -62,6 +63,9 @@ class HomeScreen extends StatelessWidget {
               Tab(
                   icon: Icon(Icons.star, color: Colors.white),
                   text: "Zodiac Forecast"),
+              Tab(
+                  icon: Icon(Icons.person, color: Colors.white),
+                  text: "Profile"),
             ],
           ),
         ),
@@ -71,6 +75,7 @@ class HomeScreen extends StatelessWidget {
             PickupLineScreen(),
             BioUpgraderScreen(),
             ZodiacForecastScreen(),
+            ProfileScreen(),
           ],
         ),
       ),
