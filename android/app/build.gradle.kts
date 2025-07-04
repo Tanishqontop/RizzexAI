@@ -4,6 +4,18 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import java.util.Properties
+import java.io.FileInputStream
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = file("../key.properties")
+println("DEBUG: keystorePropertiesFile.exists() = "+keystorePropertiesFile.exists())
+println("DEBUG: keystorePropertiesFile.absolutePath = "+keystorePropertiesFile.absolutePath)
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    println("DEBUG: keystoreProperties = $keystoreProperties")
+}
+
 android {
     namespace = "com.example.rizzexai"
     compileSdk = 35
@@ -26,9 +38,22 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            val storeFilePath = keystoreProperties["storeFile"]?.toString()
+            println("DEBUG: storeFilePath = '$storeFilePath'")
+            if (storeFilePath != null) {
+                storeFile = file(storeFilePath)
+            }
+            storePassword = keystoreProperties["storePassword"]?.toString() ?: ""
+            keyAlias = keystoreProperties["keyAlias"]?.toString() ?: ""
+            keyPassword = keystoreProperties["keyPassword"]?.toString() ?: ""
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

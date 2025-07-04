@@ -12,9 +12,7 @@ class SupabaseNoteService {
         .select()
         .eq('user_id', userId)
         .order('created_at', ascending: false);
-    return (response as List)
-        .map((item) => Note.fromMap(item as Map<String, dynamic>))
-        .toList();
+    return (response as List).map((item) => Note.fromMap(item)).toList();
   }
 
   Future<Note?> addNote(String title, String content) async {
@@ -29,7 +27,7 @@ class SupabaseNoteService {
         })
         .select()
         .single();
-    return Note.fromMap(response as Map<String, dynamic>);
+    return Note.fromMap(response);
   }
 
   Future<void> updateNote(Note note) async {

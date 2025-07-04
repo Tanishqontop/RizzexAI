@@ -16,23 +16,23 @@ class FontTestScreen extends StatelessWidget {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
+          children: const [
+            Text(
               'Playfair Display Regular',
               style: TextStyle(
                 fontFamily: 'PlayfairDisplay',
                 fontSize: 24,
-                color: Colors.white,
+                color: Colors.black,
               ),
             ),
-            const SizedBox(height: 20),
-            const Text(
+            SizedBox(height: 20),
+            Text(
               'Playfair Display Bold',
               style: TextStyle(
                 fontFamily: 'PlayfairDisplay',
-                fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                fontSize: 24,
+                color: Colors.black,
               ),
             ),
           ],

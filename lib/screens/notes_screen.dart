@@ -125,8 +125,8 @@ class _NotesScreenState extends State<NotesScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _addOrEditNote(),
         backgroundColor: Colors.red,
-        child: const Icon(Icons.add, color: Colors.white),
         tooltip: 'Add Note',
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

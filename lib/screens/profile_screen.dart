@@ -37,14 +37,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
-    print('Loading profile...');
     try {
       setState(() {
         _isLoading = true;
         _errorMessage = null;
       });
       final profile = await _profileService.getProfile(_currentUser!.id);
-      print('Profile loaded: ' + profile.toString());
       if (mounted) {
         setState(() {
           if (profile != null) {
@@ -56,7 +54,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       }
     } catch (e) {
-      print('Error loading profile: $e');
       if (mounted) {
         setState(() {
           _errorMessage = 'Error loading profile: ${e.toString()}';
@@ -77,25 +74,45 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<String?> _uploadAvatar(File file) async {
-    final userId = _currentUser!.id;
-    final ext = file.path.split('.').last;
-    final fileName =
-        'avatars/$userId.${DateTime.now().millisecondsSinceEpoch}.$ext';
-    final storage = Supabase.instance.client.storage.from('avatars');
-    final res = await storage.upload(fileName, file);
-    if (res.isEmpty) return null;
-    final publicUrl = storage.getPublicUrl(fileName);
-    return publicUrl;
+    try {
+      final userId = _currentUser!.id;
+      final ext = file.path.split('.').last;
+      final fileName =
+          'avatars/$userId.${DateTime.now().millisecondsSinceEpoch}.$ext';
+      final storage = Supabase.instance.client.storage.from('avatars');
+      final res = await storage.upload(fileName, file);
+      if (res.isEmpty) {
+        print('Upload failed: empty response');
+        return null;
+      }
+      final publicUrl = storage.getPublicUrl(fileName);
+      print('Avatar uploaded. Public URL: $publicUrl');
+      return publicUrl;
+    } catch (e) {
+      print('Upload failed: $e');
+      return null;
+    }
   }
 
   Future<void> _saveProfile() async {
     if (_currentUser == null) return;
     setState(() => _isLoading = true);
     String? avatarUrl = _avatarUrl;
-    if (_avatarFile != null) {
-      avatarUrl = await _uploadAvatar(_avatarFile!);
-    }
     try {
+      if (_avatarFile != null) {
+        avatarUrl = await _uploadAvatar(_avatarFile!);
+        if (avatarUrl == null) {
+          if (mounted) {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to upload avatar.')),
+          );
+          return;
+        }
+      }
       await _profileService.updateProfile(
         userId: _currentUser!.id,
         username: _usernameController.text,
@@ -115,9 +132,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Error updating profile: ${e.toString()}';
           _isLoading = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating profile: $e')),
+        );
       }
     }
   }
@@ -149,7 +168,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    print('Building profile screen. isLoading: $_isLoading');
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -264,8 +282,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                 ),
                                               ),
                                             );
-                                            if (source != null)
+                                            if (source != null) {
                                               _pickAvatar(source);
+                                            }
                                           },
                                         ),
                                       ),

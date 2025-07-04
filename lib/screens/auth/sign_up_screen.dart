@@ -62,6 +62,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         redirectTo: 'io.supabase.flutter://login-callback/',
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Google sign-in failed: $e')),
       );
@@ -145,7 +146,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           borderRadius: BorderRadius.circular(32),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.07),
+                              color: const Color.fromRGBO(0, 0, 0, 0.07),
                               blurRadius: 16,
                               offset: const Offset(0, 8),
                             ),
@@ -335,8 +336,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   const SizedBox(width: 16),
                                   Expanded(
                                     child: OutlinedButton.icon(
-                                      onPressed: () {
-                                        // TODO: Facebook sign-in
+                                      onPressed: () async {
+                                        if (!mounted) return;
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  'Facebook sign-in coming soon!')),
+                                        );
                                       },
                                       icon: Image.asset(
                                         'assets/facebook.png',

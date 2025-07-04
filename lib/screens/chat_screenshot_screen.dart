@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import '../services/gemini_service.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 class ChatScreenshotScreen extends StatefulWidget {
   const ChatScreenshotScreen({super.key});
@@ -125,7 +126,12 @@ class _ChatScreenshotScreenState extends State<ChatScreenshotScreen> {
                       .where((line) => line.trim().isNotEmpty)
                       .map(
                         (reply) => ListTile(
-                          title: Text(reply),
+                          title: MarkdownBody(
+                            data: reply,
+                            styleSheet: MarkdownStyleSheet(
+                              p: const TextStyle(fontSize: 16),
+                            ),
+                          ),
                           trailing: IconButton(
                             icon: const Icon(Icons.copy),
                             onPressed: () => copyToClipboard(reply),
