@@ -59,7 +59,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'io.supabase.flutter://login-callback/',
+        redirectTo: 'com.example.rizzexai://login-callback/',
       );
     } catch (e) {
       if (!mounted) return;
@@ -320,36 +320,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                         height: 22,
                                       ),
                                       label: const Text('Google'),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.black,
-                                        side: const BorderSide(
-                                            color: Color(0xFFE0E0E0)),
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: OutlinedButton.icon(
-                                      onPressed: () async {
-                                        if (!mounted) return;
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                              content: Text(
-                                                  'Facebook sign-in coming soon!')),
-                                        );
-                                      },
-                                      icon: Image.asset(
-                                        'assets/facebook.png',
-                                        height: 22,
-                                      ),
-                                      label: const Text('Facebook'),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: Colors.black,
                                         side: const BorderSide(

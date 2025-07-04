@@ -120,26 +120,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
       );
     }
 
-    // Use the cached session first, then fall back to the stream
     if (_currentSession != null) {
       return const HomeScreen();
+    } else {
+      return const SignInScreen();
     }
-
-    return StreamBuilder<AuthState>(
-      stream: Supabase.instance.client.auth.onAuthStateChange,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const SignInScreen();
-        }
-
-        final session = snapshot.data?.session;
-
-        if (session != null) {
-          return const HomeScreen();
-        }
-
-        return const SignInScreen();
-      },
-    );
   }
 }
