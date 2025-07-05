@@ -43,6 +43,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _errorMessage = null;
       });
       final profile = await _profileService.getProfile(_currentUser!.id);
+      if (profile == null) {
+        // Auto-create profile if missing
+        await _profileService.createProfile(
+          userId: _currentUser!.id,
+          username: '',
+        );
+        // Try loading again
+        final newProfile = await _profileService.getProfile(_currentUser!.id);
+        if (mounted) {
+          setState(() {
+            _usernameController.text = newProfile?['username'] ?? '';
+            _bioController.text = newProfile?['bio'] ?? '';
+            _avatarUrl = newProfile?['avatar_url'];
+            _isLoading = false;
+          });
+        }
+        return;
+      }
       if (mounted) {
         setState(() {
           if (profile != null) {
@@ -82,14 +100,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final storage = Supabase.instance.client.storage.from('avatars');
       final res = await storage.upload(fileName, file);
       if (res.isEmpty) {
-        print('Upload failed: empty response');
+        // Upload failed: empty response
         return null;
       }
       final publicUrl = storage.getPublicUrl(fileName);
-      print('Avatar uploaded. Public URL: $publicUrl');
+      // Avatar uploaded successfully
       return publicUrl;
     } catch (e) {
-      print('Upload failed: $e');
+      // Upload failed with error: $e
       return null;
     }
   }
@@ -106,10 +124,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             setState(() {
               _isLoading = false;
             });
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Failed to upload avatar.')),
+            );
           }
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to upload avatar.')),
-          );
           return;
         }
       }
@@ -123,10 +141,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Profile updated successfully!')),
         );
+        await _loadProfile();
         setState(() {
-          _avatarUrl = avatarUrl;
           _avatarFile = null;
-          _isLoading = false;
+          // _isLoading is set in _loadProfile
         });
       }
     } catch (e) {
