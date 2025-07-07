@@ -98,7 +98,10 @@ class AuthService {
 
   static Future<void> resetPassword(String email) async {
     try {
-      await _supabase.auth.resetPasswordForEmail(email);
+      await _supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo: 'com.example.rizzexai://login-callback/reset-password',
+      );
     } on AuthException catch (e) {
       developer.log('Auth error during password reset: ${e.message}', error: e);
       throw Exception('Authentication error: ${e.message}');

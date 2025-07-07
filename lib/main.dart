@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:app_links/app_links.dart';
 import 'config/supabase_config.dart';
 import 'screens/home_screen.dart';
 import 'screens/auth/sign_in_screen.dart';
+import 'screens/auth/reset_password_screen.dart';
+import 'dart:async';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +31,10 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const AuthWrapper(),
+      routes: {
+        '/signin': (context) => const SignInScreen(),
+        '/reset-password': (context) => const ResetPasswordScreen(),
+      },
     );
   }
 }
@@ -42,6 +49,8 @@ class AuthWrapper extends StatefulWidget {
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _isInitialized = false;
   Session? _currentSession;
+  StreamSubscription? _linkSubscription;
+  final AppLinks _appLinks = AppLinks();
 
   @override
   void initState() {
@@ -49,6 +58,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     _currentSession = Supabase.instance.client.auth.currentSession;
     _setupAuthListener();
     _checkCurrentSession();
+    _initDeepLinkHandling();
   }
 
   void _setupAuthListener() {
@@ -110,6 +120,58 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
   }
 
+  void _initDeepLinkHandling() {
+    // Handle links when app is already running
+    _linkSubscription = _appLinks.uriLinkStream.listen((Uri? uri) {
+      if (uri != null) {
+        _handleDeepLink(uri);
+      }
+    }, onError: (err) {
+      print('Deep link error: $err');
+    });
+
+    // Handle links when app is opened from a link
+    _appLinks.getInitialAppLink().then((Uri? uri) {
+      if (uri != null) {
+        _handleDeepLink(uri);
+      }
+    });
+  }
+
+  void _handleDeepLink(Uri uri) async {
+    print('Handling deep link: $uri');
+    // Check if this is a password reset link
+    if (uri.pathSegments.contains('reset-password') ||
+        uri.queryParameters.containsKey('access_token') ||
+        uri.queryParameters.containsKey('refresh_token')) {
+      // Extract tokens from the URL
+      final accessToken = uri.queryParameters['access_token'];
+      final refreshToken = uri.queryParameters['refresh_token'];
+      print('accessToken: $accessToken');
+      print('refreshToken: $refreshToken');
+      // Set the session with the tokens
+      if (refreshToken != null) {
+        await Supabase.instance.client.auth.recoverSession(refreshToken);
+        final session = Supabase.instance.client.auth.currentSession;
+        print('Session after recover: $session');
+        if (mounted && session != null) {
+          setState(() {
+            _currentSession = session;
+          });
+          // Only now navigate to reset password screen
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/reset-password',
+            (route) => false,
+          );
+        } else {
+          print('Session is still null after recover.');
+        }
+      } else {
+        print('No refresh token found in deep link.');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
@@ -125,5 +187,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
     } else {
       return const SignInScreen();
     }
+  }
+
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
   }
 }
