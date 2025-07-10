@@ -16,8 +16,7 @@ Improve your dating app bio instantly. Just paste your existing bio and let Rizz
 Get daily romantic predictions based on your zodiac sign. This feature combines astrology and AI for fun, sharable forecasts.
 
 ### 📷 4. Chat Screenshot Generator
-Create flirty chat screenshots for memes, pranks, or social media with fully customizable text.
-
+Share you Chat Screenshot and Get Flirty and Apt replies with the help of AI.
 ---
 
 [View Live Demo](https://www.youtube.com/shorts/pA7_STTcAwA) 
