@@ -3,6 +3,7 @@ import '../../services/auth_service.dart';
 import '../home_screen.dart';
 import 'sign_in_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../phone_verification_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -41,7 +42,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const PhoneVerificationScreen()),
           (route) => false,
         );
       }
@@ -61,6 +62,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         OAuthProvider.google,
         redirectTo: 'com.example.rizzexai://login-callback/',
       );
+      // AuthWrapper will handle navigation based on phone verification status
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
