@@ -40,10 +40,12 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/
     - assets/icon/app_icon.png
     - assets/google.png
     - assets/facebook.png
     - assets/video/
+    - assets/adolfo-felix-4JL_VAgxwcU-unsplash.jpg
 
 flutter_launcher_icons:
   android: true

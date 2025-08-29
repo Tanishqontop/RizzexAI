@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'home_screen.dart';
+import 'location_screen.dart';
 
 class ProfileDetailsScreen extends StatelessWidget {
   const ProfileDetailsScreen({super.key});
@@ -79,10 +80,11 @@ class ProfileDetailsScreen extends StatelessWidget {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pushAndRemoveUntil(
+                    Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      (route) => false,
+                      MaterialPageRoute(
+                        builder: (_) => const LocationScreen(),
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
