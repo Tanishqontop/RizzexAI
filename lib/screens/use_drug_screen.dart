@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'home_screen.dart';
+import 'show_person_screen.dart';
 
 class UseDrugScreen extends StatefulWidget {
   const UseDrugScreen({super.key});
@@ -73,19 +74,17 @@ class _UseDrugScreenState extends State<UseDrugScreen> {
                 onTapCancel: () => setState(() => _pressed = false),
                 onTapUp: (_) {
                   setState(() => _pressed = false);
-                  Navigator.pushAndRemoveUntil(
+                  Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const HomeScreen()),
-                    (route) => false,
+                    MaterialPageRoute(builder: (_) => const ShowPersonScreen()),
                   );
                 },
                 child: Container(
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: _pressed ? const Color(0xFFF0EDF2) : Colors.white,
+                    color: _pressed ? const Color(0xFF5A3BB1) : const Color(0xFF6B46C1),
                     shape: BoxShape.circle,
-                    border: Border.all(color: const Color(0xFFE7E3E7)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.08),
@@ -94,7 +93,7 @@ class _UseDrugScreenState extends State<UseDrugScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.check_rounded, color: Color(0xFF1F1F1F)),
+                  child: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white),
                 ),
               ),
             ),
