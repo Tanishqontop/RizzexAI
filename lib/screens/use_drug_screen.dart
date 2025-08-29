@@ -1,26 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'home_town_screen.dart';
+import 'home_screen.dart';
 
-class FamilyPlansScreen extends StatefulWidget {
-  const FamilyPlansScreen({super.key});
+class UseDrugScreen extends StatefulWidget {
+  const UseDrugScreen({super.key});
 
   @override
-  State<FamilyPlansScreen> createState() => _FamilyPlansScreenState();
+  State<UseDrugScreen> createState() => _UseDrugScreenState();
 }
 
-class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
+class _UseDrugScreenState extends State<UseDrugScreen> {
   String? _selected;
   bool _visibleOnProfile = true;
   bool _pressed = false;
 
-  static const List<String> _options = [
-    "Don't want children",
-    'Want children',
-    'Open to children',
-    'Not sure yet',
-    'Prefer not to say',
-  ];
+  static const List<String> _options = ['Yes', 'Sometimes', 'No', 'Prefer not to say'];
 
   @override
   Widget build(BuildContext context) {
@@ -36,11 +30,11 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.child_care_outlined, size: 40, color: Color(0xFF1F1F1F)),
+                    const Icon(Icons.medication_liquid_outlined, size: 40, color: Color(0xFF1F1F1F)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'What are your family plans?',
+                        'Do you use drugs?',
                         style: GoogleFonts.playfairDisplay(
                           fontSize: 34,
                           height: 1.1,
@@ -52,7 +46,7 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                ..._options.map((o) => _Tile(
+                ..._options.map((o) => _RadioTile(
                       label: o,
                       selected: _selected == o,
                       onTap: () => setState(() => _selected = o),
@@ -79,9 +73,10 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
                 onTapCancel: () => setState(() => _pressed = false),
                 onTapUp: (_) {
                   setState(() => _pressed = false);
-                  Navigator.push(
+                  Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (_) => const HomeTownScreen()),
+                    MaterialPageRoute(builder: (_) => const HomeScreen()),
+                    (route) => false,
                   );
                 },
                 child: Container(
@@ -110,8 +105,8 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
   }
 }
 
-class _Tile extends StatelessWidget {
-  const _Tile({required this.label, required this.selected, required this.onTap});
+class _RadioTile extends StatelessWidget {
+  const _RadioTile({required this.label, required this.selected, required this.onTap});
   final String label;
   final bool selected;
   final VoidCallback onTap;

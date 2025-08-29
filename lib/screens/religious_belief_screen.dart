@@ -1,26 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'home_town_screen.dart';
+import 'political_belief_screen.dart';
 
-class FamilyPlansScreen extends StatefulWidget {
-  const FamilyPlansScreen({super.key});
+class ReligiousBeliefScreen extends StatefulWidget {
+  const ReligiousBeliefScreen({super.key});
 
   @override
-  State<FamilyPlansScreen> createState() => _FamilyPlansScreenState();
+  State<ReligiousBeliefScreen> createState() => _ReligiousBeliefScreenState();
 }
 
-class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
-  String? _selected;
+class _ReligiousBeliefScreenState extends State<ReligiousBeliefScreen> {
+  final Set<String> _selected = <String>{};
   bool _visibleOnProfile = true;
   bool _pressed = false;
 
   static const List<String> _options = [
-    "Don't want children",
-    'Want children',
-    'Open to children',
-    'Not sure yet',
-    'Prefer not to say',
+    'Agnostic',
+    'Atheist',
+    'Buddhist',
+    'Catholic',
+    'Christian',
+    'Hindu',
+    'Jewish',
+    'Muslim',
+    'Sikh',
+    'Spiritual',
+    'Other',
   ];
+
+  void _toggle(String o) {
+    setState(() {
+      if (_selected.contains(o)) {
+        _selected.remove(o);
+      } else {
+        _selected.add(o);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,11 +52,11 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.child_care_outlined, size: 40, color: Color(0xFF1F1F1F)),
+                    const Icon(Icons.menu_book_outlined, size: 40, color: Color(0xFF1F1F1F)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'What are your family plans?',
+                        'What are your religious beliefs?',
                         style: GoogleFonts.playfairDisplay(
                           fontSize: 34,
                           height: 1.1,
@@ -54,8 +70,8 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
                 const SizedBox(height: 24),
                 ..._options.map((o) => _Tile(
                       label: o,
-                      selected: _selected == o,
-                      onTap: () => setState(() => _selected = o),
+                      selected: _selected.contains(o),
+                      onTap: () => _toggle(o),
                     )),
                 const SizedBox(height: 16),
                 Row(
@@ -81,7 +97,7 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
                   setState(() => _pressed = false);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const HomeTownScreen()),
+                    MaterialPageRoute(builder: (_) => const PoliticalBeliefScreen()),
                   );
                 },
                 child: Container(
@@ -99,7 +115,7 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.check_rounded, color: Color(0xFF1F1F1F)),
+                  child: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF1F1F1F)),
                 ),
               ),
             ),
@@ -132,8 +148,8 @@ class _Tile extends StatelessWidget {
               width: 22,
               height: 22,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
                 border: Border.all(color: const Color(0xFFD6D3D6)),
+                borderRadius: BorderRadius.circular(4),
                 color: selected ? const Color(0xFF6B46C1) : Colors.transparent,
               ),
               child: selected ? const Icon(Icons.check, size: 16, color: Colors.white) : null,

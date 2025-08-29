@@ -98,19 +98,6 @@ class _LocationScreenState extends State<LocationScreen> {
                             child: const Icon(Icons.my_location_outlined, color: Color(0xFF1F1F1F)),
                           ),
                         ),
-                        Align(
-                          alignment: Alignment.center,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1F1F1F),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),

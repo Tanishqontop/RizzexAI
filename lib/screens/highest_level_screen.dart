@@ -1,25 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'home_town_screen.dart';
+import 'religious_belief_screen.dart';
 
-class FamilyPlansScreen extends StatefulWidget {
-  const FamilyPlansScreen({super.key});
+class HighestLevelScreen extends StatefulWidget {
+  const HighestLevelScreen({super.key});
 
   @override
-  State<FamilyPlansScreen> createState() => _FamilyPlansScreenState();
+  State<HighestLevelScreen> createState() => _HighestLevelScreenState();
 }
 
-class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
+class _HighestLevelScreenState extends State<HighestLevelScreen> {
   String? _selected;
-  bool _visibleOnProfile = true;
   bool _pressed = false;
 
   static const List<String> _options = [
-    "Don't want children",
-    'Want children',
-    'Open to children',
-    'Not sure yet',
-    'Prefer not to say',
+    'Secondary school', 'Undergrad', 'Postgrad', 'Prefer not to say'
   ];
 
   @override
@@ -36,11 +31,11 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.child_care_outlined, size: 40, color: Color(0xFF1F1F1F)),
+                    const Icon(Icons.school_outlined, size: 40, color: Color(0xFF1F1F1F)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'What are your family plans?',
+                        "What's the highest level you attained?",
                         style: GoogleFonts.playfairDisplay(
                           fontSize: 34,
                           height: 1.1,
@@ -52,7 +47,7 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
                   ],
                 ),
                 const SizedBox(height: 24),
-                ..._options.map((o) => _Tile(
+                ..._options.map((o) => _EduTile(
                       label: o,
                       selected: _selected == o,
                       onTap: () => setState(() => _selected = o),
@@ -60,12 +55,9 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Checkbox(
-                      value: _visibleOnProfile,
-                      activeColor: const Color(0xFF6B46C1),
-                      onChanged: (v) => setState(() => _visibleOnProfile = v ?? true),
-                    ),
-                    Text('Visible on profile', style: GoogleFonts.inter(fontSize: 16)),
+                    const Icon(Icons.visibility_off_outlined, color: Color(0xFF1F1F1F)),
+                    const SizedBox(width: 8),
+                    Text('Hidden on profile', style: GoogleFonts.inter(fontSize: 16)),
                   ],
                 ),
                 const SizedBox(height: 100),
@@ -81,7 +73,7 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
                   setState(() => _pressed = false);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => const HomeTownScreen()),
+                    MaterialPageRoute(builder: (_) => const ReligiousBeliefScreen()),
                   );
                 },
                 child: Container(
@@ -110,8 +102,8 @@ class _FamilyPlansScreenState extends State<FamilyPlansScreen> {
   }
 }
 
-class _Tile extends StatelessWidget {
-  const _Tile({required this.label, required this.selected, required this.onTap});
+class _EduTile extends StatelessWidget {
+  const _EduTile({required this.label, required this.selected, required this.onTap});
   final String label;
   final bool selected;
   final VoidCallback onTap;
