@@ -3,15 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'home_screen.dart';
 import 'location_screen.dart';
 
-class ProfileDetailsScreen extends StatefulWidget {
+class ProfileDetailsScreen extends StatelessWidget {
   const ProfileDetailsScreen({super.key});
-
-  @override
-  State<ProfileDetailsScreen> createState() => _ProfileDetailsScreenState();
-}
-
-class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
-  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -77,37 +70,34 @@ class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
                 ],
               ),
             ),
-            // Bottom purple bar with button
-            Container(
-              width: double.infinity,
-              color: const Color(0xFF6B46C1),
+            // Bottom button
+            Padding(
               padding: const EdgeInsets.all(24.0),
-              child: GestureDetector(
-                onTapDown: (_) => setState(() => _pressed = true),
-                onTapCancel: () => setState(() => _pressed = false),
-                onTapUp: (_) {
-                  setState(() => _pressed = false);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const LocationScreen(),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LocationScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6B46C1),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  );
-                },
-                child: Container(
-                  width: double.infinity,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF6B46C1),
-                    borderRadius: BorderRadius.circular(12),
+                    elevation: 0,
                   ),
-                  alignment: Alignment.center,
                   child: Text(
                     'Add more details',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
                     ),
                   ),
                 ),
