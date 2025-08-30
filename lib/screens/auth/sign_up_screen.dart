@@ -110,7 +110,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             height: size.height * 0.38,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFFF0000), Color(0xFFB71C1C)],
+                colors: [Color(0xFF6B46C1), Color(0xFF5A3BB1)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -255,8 +255,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     decoration: BoxDecoration(
                                       gradient: const LinearGradient(
                                         colors: [
-                                          Color(0xFFFF0000),
-                                          Color(0xFFB71C1C)
+                                          Color(0xFF6B46C1),
+                                          Color(0xFF5A3BB1)
                                         ],
                                         begin: Alignment.centerLeft,
                                         end: Alignment.centerRight,
