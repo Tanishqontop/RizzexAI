@@ -3,8 +3,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'home_screen.dart';
 import 'location_screen.dart';
 
-class ProfileDetailsScreen extends StatelessWidget {
+class ProfileDetailsScreen extends StatefulWidget {
   const ProfileDetailsScreen({super.key});
+
+  @override
+  State<ProfileDetailsScreen> createState() => _ProfileDetailsScreenState();
+}
+
+class _ProfileDetailsScreenState extends State<ProfileDetailsScreen> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +59,7 @@ class ProfileDetailsScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(70),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF6B46C1).withValues(alpha: 0.2),
+                            color: const Color(0xFF6B46C1).withOpacity(0.2),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -75,31 +82,32 @@ class ProfileDetailsScreen extends StatelessWidget {
               width: double.infinity,
               color: const Color(0xFF6B46C1),
               padding: const EdgeInsets.all(24.0),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const LocationScreen(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6B46C1),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              child: GestureDetector(
+                onTapDown: (_) => setState(() => _pressed = true),
+                onTapCancel: () => setState(() => _pressed = false),
+                onTapUp: (_) {
+                  setState(() => _pressed = false);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const LocationScreen(),
                     ),
-                    elevation: 0,
+                  );
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6B46C1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  alignment: Alignment.center,
                   child: Text(
                     'Add more details',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
                   ),
                 ),
