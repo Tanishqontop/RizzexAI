@@ -12,6 +12,7 @@ class SexualityScreen extends StatefulWidget {
 class _SexualityScreenState extends State<SexualityScreen> {
   String? _selected;
   bool _visibleOnProfile = true;
+  bool _isNextPressed = false;
 
   static const List<String> _options = [
     'Prefer not to say',
@@ -28,6 +29,8 @@ class _SexualityScreenState extends State<SexualityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasSelection = _selected != null;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -83,16 +86,41 @@ class _SexualityScreenState extends State<SexualityScreen> {
             Positioned(
               right: 24,
               bottom: 24,
-              child: FloatingActionButton(
-                backgroundColor: const Color(0xFFEDEAF1),
-                elevation: 0,
-                onPressed: () {
+              child: GestureDetector(
+                onTapDown: (_) {
+                  setState(() => _isNextPressed = true);
+                },
+                onTapCancel: () {
+                  setState(() => _isNextPressed = false);
+                },
+                onTapUp: (_) {
+                  setState(() => _isNextPressed = false);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const LikeToDateScreen()),
                   );
                 },
-                child: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF1F1F1F)),
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: hasSelection 
+                        ? (_isNextPressed ? const Color(0xFF5A3BB1) : const Color(0xFF6B46C1))
+                        : (_isNextPressed ? const Color(0xFFF0EDF2) : const Color(0xFFEDEAF1)),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward_ios_rounded, 
+                    color: hasSelection ? Colors.white : const Color(0xFF1F1F1F)
+                  ),
+                ),
               ),
             )
           ],
@@ -120,9 +148,7 @@ class _SexualityTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Expanded(
-              child: Text(label, style: GoogleFonts.inter(fontSize: 18, color: const Color(0xFF1F1F1F))),
-            ),
+            Expanded(child: Text(label, style: GoogleFonts.inter(fontSize: 18, color: const Color(0xFF1F1F1F)))),
             Container(
               width: 22,
               height: 22,
