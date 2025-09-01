@@ -18,6 +18,20 @@ class _BioUpgraderScreenState extends State<BioUpgraderScreen> {
   String _selectedStyle = 'Romantic';
   final List<String> _styles = ['Romantic', 'Funny', 'Confident'];
 
+  bool get _hasText => _bioController.text.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _bioController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _bioController.dispose();
+    super.dispose();
+  }
+
   Future<void> upgradeBio() async {
     setState(() => _loading = true);
 
@@ -93,8 +107,17 @@ class _BioUpgraderScreenState extends State<BioUpgraderScreen> {
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: upgradeBio,
-                child: const Text("Upgrade My Bio"),
+                onPressed: _hasText ? upgradeBio : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _hasText ? const Color(0xFF6B46C1) : null,
+                  foregroundColor: _hasText ? Colors.white : null,
+                ),
+                child: Text(
+                  "Upgrade My Bio",
+                  style: TextStyle(
+                    color: _hasText ? Colors.white : null,
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
               if (_loading) const Center(child: CircularProgressIndicator()),

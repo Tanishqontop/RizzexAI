@@ -18,8 +18,10 @@ class _ChatScreenshotScreenState extends State<ChatScreenshotScreen> {
   String _extractedText = '';
   String _responseText = '';
   bool _loading = false;
+  bool _buttonPressed = false;
 
   Future<void> _pickImage() async {
+    setState(() => _buttonPressed = true);
     final ImagePicker picker = ImagePicker();
     final XFile? image = await picker.pickImage(source: ImageSource.gallery);
 
@@ -30,6 +32,7 @@ class _ChatScreenshotScreenState extends State<ChatScreenshotScreen> {
       });
       extractText(image.path);
     }
+    setState(() => _buttonPressed = false);
   }
 
   Future<void> extractText(String imagePath) async {
@@ -93,8 +96,12 @@ class _ChatScreenshotScreenState extends State<ChatScreenshotScreen> {
           children: [
             ElevatedButton.icon(
               onPressed: _pickImage,
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Upload Chat Screenshot'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _buttonPressed ? const Color(0xFF6B46C1) : null,
+                foregroundColor: _buttonPressed ? Colors.white : null,
+              ),
+              icon: Icon(Icons.upload_file, color: _buttonPressed ? Colors.white : null),
+              label: Text('Upload Chat Screenshot', style: TextStyle(color: _buttonPressed ? Colors.white : null)),
             ),
             if (_image != null) ...[
               Image.file(_image!),

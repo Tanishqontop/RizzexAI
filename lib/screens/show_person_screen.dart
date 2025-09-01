@@ -49,12 +49,13 @@ class _ShowPersonScreenState extends State<ShowPersonScreen> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 24.0),
+                child: FloatingActionButton(
+                  heroTag: 'show-person-next',
+                  backgroundColor: const Color(0xFF6B46C1),
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -63,24 +64,13 @@ class _ShowPersonScreenState extends State<ShowPersonScreen> {
                       ),
                     );
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6B46C1),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: Text(
-                    'Fill out your profile',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: const Icon(
+                    Icons.arrow_forward,
+                    color: Colors.white,
                   ),
                 ),
               ),
-            ),
+            )
           ],
         ),
       ),
