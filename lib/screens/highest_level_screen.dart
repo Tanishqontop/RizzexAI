@@ -12,6 +12,7 @@ class HighestLevelScreen extends StatefulWidget {
 class _HighestLevelScreenState extends State<HighestLevelScreen> {
   String? _selected;
   bool _pressed = false;
+  bool _hiddenOnProfile = true;
 
   static const List<String> _options = [
     'Secondary school', 'Undergrad', 'Postgrad', 'Prefer not to say'
@@ -55,12 +56,21 @@ class _HighestLevelScreenState extends State<HighestLevelScreen> {
                       onTap: () => setState(() => _selected = o),
                     )),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Icon(Icons.visibility_off_outlined, color: Color(0xFF1F1F1F)),
-                    const SizedBox(width: 8),
-                    Text('Hidden on profile', style: GoogleFonts.inter(fontSize: 16)),
-                  ],
+                InkWell(
+                  onTap: () => setState(() => _hiddenOnProfile = !_hiddenOnProfile),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _hiddenOnProfile ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        color: const Color(0xFF1F1F1F)
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _hiddenOnProfile ? 'Hidden on profile' : 'Visible on profile',
+                        style: GoogleFonts.inter(fontSize: 16)
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 100),
               ],

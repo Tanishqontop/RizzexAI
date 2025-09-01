@@ -10,7 +10,6 @@ class ShowPersonScreen extends StatefulWidget {
 }
 
 class _ShowPersonScreenState extends State<ShowPersonScreen> {
-  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +23,7 @@ class _ShowPersonScreenState extends State<ShowPersonScreen> {
               children: [
                 const SizedBox(height: 48),
                 Text(
-                  'Show off the person behind the profile with pics, videos and Prompts.',
+                  'Show off the person behind the profile with pics, videos.',
                   style: GoogleFonts.playfairDisplay(
                     fontSize: 44,
                     height: 1.1,
@@ -46,28 +45,38 @@ class _ShowPersonScreenState extends State<ShowPersonScreen> {
                 const SizedBox(height: 120),
               ],
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: GestureDetector(
-                onTapDown: (_) => setState(() => _pressed = true),
-                onTapCancel: () => setState(() => _pressed = false),
-                onTapUp: (_) {
-                  setState(() => _pressed = false);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const PickMediaScreen()),
-                  );
-                },
-                child: Container(
-                  color: _pressed ? const Color(0xFF5A3BB1) : const Color(0xFF6B46C1),
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  alignment: Alignment.center,
-                  child: Text('Fill out your profile', style: GoogleFonts.inter(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+            Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PickMediaScreen(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6B46C1),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    'Fill out your profile',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),

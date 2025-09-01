@@ -31,7 +31,7 @@ class _UseDrugScreenState extends State<UseDrugScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.medication_liquid_outlined, size: 40, color: Color(0xFF1F1F1F)),
+                    const Icon(Icons.smoke_free_outlined, size: 40, color: Color(0xFF1F1F1F)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
