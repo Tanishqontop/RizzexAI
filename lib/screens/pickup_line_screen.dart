@@ -15,6 +15,20 @@ class _PickupLineScreenState extends State<PickupLineScreen> {
   String _pickupLine = '';
   bool _loading = false;
 
+  bool get _hasText => _controller.text.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   Future<void> generatePickupLine() async {
     if (_controller.text.trim().isEmpty) return;
 
@@ -78,8 +92,17 @@ class _PickupLineScreenState extends State<PickupLineScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: generatePickupLine,
-                    child: const Text('Generate Pick-up Line'),
+                    onPressed: _hasText ? generatePickupLine : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _hasText ? const Color(0xFF6B46C1) : null,
+                      foregroundColor: _hasText ? Colors.white : null,
+                    ),
+                    child: Text(
+                      'Generate Pick-up Line',
+                      style: TextStyle(
+                        color: _hasText ? Colors.white : null,
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),

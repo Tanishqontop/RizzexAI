@@ -45,7 +45,7 @@ flutter:
     - assets/google.png
     - assets/facebook.png
     - assets/video/
-    - assets/adolfo-felix-4JL_VAgxwcU-unsplash.jpg
+    - assets/round-icons-lEvCd62sbKs-unsplash.jpg
 
 flutter_launcher_icons:
   android: true

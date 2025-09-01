@@ -11,17 +11,30 @@ class JobTitleScreen extends StatefulWidget {
 
 class _JobTitleScreenState extends State<JobTitleScreen> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   bool _visibleOnProfile = true;
   bool _pressed = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Auto-focus the text field when the screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool hasText = _controller.text.trim().isNotEmpty;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -52,6 +65,12 @@ class _JobTitleScreenState extends State<JobTitleScreen> {
                 const SizedBox(height: 24),
                 TextField(
                   controller: _controller,
+                  focusNode: _focusNode,
+                  onChanged: (value) {
+                    setState(() {
+                      // This will trigger a rebuild when text changes
+                    });
+                  },
                   decoration: InputDecoration(
                     hintText: 'Job title',
                     hintStyle: GoogleFonts.inter(color: const Color(0xFF9A979A), fontSize: 22, fontStyle: FontStyle.italic),
@@ -90,7 +109,9 @@ class _JobTitleScreenState extends State<JobTitleScreen> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: _pressed ? const Color(0xFFF0EDF2) : Colors.white,
+                    color: hasText 
+                        ? (_pressed ? const Color(0xFF5A3BB1) : const Color(0xFF6B46C1))
+                        : (_pressed ? const Color(0xFFF0EDF2) : Colors.white),
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFFE7E3E7)),
                     boxShadow: [
@@ -101,7 +122,10 @@ class _JobTitleScreenState extends State<JobTitleScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF1F1F1F)),
+                  child: Icon(
+                    Icons.arrow_forward_ios_rounded, 
+                    color: hasText ? Colors.white : const Color(0xFF1F1F1F)
+                  ),
                 ),
               ),
             ),

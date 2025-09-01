@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'home_screen.dart';
 import 'pronouns_screen.dart';
 
 class LocationScreen extends StatefulWidget {
@@ -13,11 +12,25 @@ class LocationScreen extends StatefulWidget {
 class _LocationScreenState extends State<LocationScreen> {
   final TextEditingController _locationController = TextEditingController();
   bool _isNextPressed = false;
+  bool _hasText = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _locationController.addListener(_onTextChanged);
+  }
 
   @override
   void dispose() {
+    _locationController.removeListener(_onTextChanged);
     _locationController.dispose();
     super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {
+      _hasText = _locationController.text.trim().isNotEmpty;
+    });
   }
 
   @override
@@ -141,7 +154,9 @@ class _LocationScreenState extends State<LocationScreen> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: _isNextPressed ? const Color(0xFFF0EDF2) : Colors.white,
+                    color: _hasText 
+                        ? (_isNextPressed ? const Color(0xFF5A3BB1) : const Color(0xFF6B46C1))
+                        : (_isNextPressed ? const Color(0xFFF0EDF2) : Colors.white),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -152,7 +167,10 @@ class _LocationScreenState extends State<LocationScreen> {
                     ],
                     border: Border.all(color: const Color(0xFFE7E3E7)),
                   ),
-                  child: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF1F1F1F)),
+                  child: Icon(
+                    Icons.arrow_forward_ios_rounded, 
+                    color: _hasText ? Colors.white : const Color(0xFF1F1F1F)
+                  ),
                 ),
               ),
             )
@@ -162,5 +180,3 @@ class _LocationScreenState extends State<LocationScreen> {
     );
   }
 }
-
-

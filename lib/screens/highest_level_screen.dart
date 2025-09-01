@@ -12,6 +12,7 @@ class HighestLevelScreen extends StatefulWidget {
 class _HighestLevelScreenState extends State<HighestLevelScreen> {
   String? _selected;
   bool _pressed = false;
+  bool _hiddenOnProfile = true;
 
   static const List<String> _options = [
     'Secondary school', 'Undergrad', 'Postgrad', 'Prefer not to say'
@@ -19,6 +20,8 @@ class _HighestLevelScreenState extends State<HighestLevelScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasSelection = _selected != null;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -53,12 +56,21 @@ class _HighestLevelScreenState extends State<HighestLevelScreen> {
                       onTap: () => setState(() => _selected = o),
                     )),
                 const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Icon(Icons.visibility_off_outlined, color: Color(0xFF1F1F1F)),
-                    const SizedBox(width: 8),
-                    Text('Hidden on profile', style: GoogleFonts.inter(fontSize: 16)),
-                  ],
+                InkWell(
+                  onTap: () => setState(() => _hiddenOnProfile = !_hiddenOnProfile),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _hiddenOnProfile ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        color: const Color(0xFF1F1F1F)
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        _hiddenOnProfile ? 'Hidden on profile' : 'Visible on profile',
+                        style: GoogleFonts.inter(fontSize: 16)
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 100),
               ],
@@ -80,7 +92,9 @@ class _HighestLevelScreenState extends State<HighestLevelScreen> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: _pressed ? const Color(0xFFF0EDF2) : Colors.white,
+                    color: hasSelection 
+                        ? (_pressed ? const Color(0xFF5A3BB1) : const Color(0xFF6B46C1))
+                        : (_pressed ? const Color(0xFFF0EDF2) : Colors.white),
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFFE7E3E7)),
                     boxShadow: [
@@ -91,7 +105,10 @@ class _HighestLevelScreenState extends State<HighestLevelScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.check_rounded, color: Color(0xFF1F1F1F)),
+                  child: Icon(
+                    Icons.arrow_forward_ios_rounded, 
+                    color: hasSelection ? Colors.white : const Color(0xFF1F1F1F)
+                  ),
                 ),
               ),
             ),

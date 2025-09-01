@@ -65,7 +65,7 @@ class _NotesScreenState extends State<NotesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Notes', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFF6B46C1),
         centerTitle: true,
       ),
       body: _loading
@@ -73,7 +73,7 @@ class _NotesScreenState extends State<NotesScreen> {
           : _error != null
               ? Center(
                   child:
-                      Text(_error!, style: const TextStyle(color: Colors.red)))
+                      Text(_error!, style: const TextStyle(color: Color(0xFF6B46C1))))
               : RefreshIndicator(
                   onRefresh: _fetchNotes,
                   child: _notes.isEmpty
@@ -86,7 +86,7 @@ class _NotesScreenState extends State<NotesScreen> {
                             return Dismissible(
                               key: Key(note.id),
                               background: Container(
-                                color: Colors.red,
+                                color: Color(0xFF6B46C1),
                                 alignment: Alignment.centerLeft,
                                 padding: const EdgeInsets.only(left: 24),
                                 child: const Icon(Icons.delete,
@@ -112,7 +112,7 @@ class _NotesScreenState extends State<NotesScreen> {
                                   ),
                                   trailing: IconButton(
                                     icon: const Icon(Icons.edit,
-                                        color: Colors.red),
+                                        color: Color(0xFF6B46C1 )),
                                     onPressed: () => _addOrEditNote(note: note),
                                   ),
                                   onTap: () => _showNoteDetail(note),
@@ -124,7 +124,7 @@ class _NotesScreenState extends State<NotesScreen> {
                 ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _addOrEditNote(),
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFF6B46C1 ),
         tooltip: 'Add Note',
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -220,7 +220,7 @@ class _NoteDialogState extends State<_NoteDialog> {
               ),
             );
           },
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+          style: ElevatedButton.styleFrom(backgroundColor: Color.fromARGB(255, 252, 252, 252)),
           child: Text(widget.note == null ? 'Add' : 'Save'),
         ),
       ],

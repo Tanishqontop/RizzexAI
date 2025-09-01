@@ -79,8 +79,17 @@ class _ZodiacForecastScreenState extends State<ZodiacForecastScreen> {
             ),
             const SizedBox(height: 16),
             ElevatedButton(
-              onPressed: getForecast,
-              child: const Text("Get My Rizz Forecast"),
+              onPressed: _selectedSign != null ? getForecast : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _selectedSign != null ? const Color(0xFF6B46C1) : null,
+                foregroundColor: _selectedSign != null ? Colors.white : null,
+              ),
+              child: Text(
+                "Get My Rizz Forecast",
+                style: TextStyle(
+                  color: _selectedSign != null ? Colors.white : null,
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             if (_loading) const CircularProgressIndicator(),

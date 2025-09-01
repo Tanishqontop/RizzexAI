@@ -190,7 +190,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Profile', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFF6B46C1),
         centerTitle: true,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
@@ -204,7 +204,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ? Container(
                   alignment: Alignment.center,
                   height: MediaQuery.of(context).size.height * 0.5,
-                  child: const CircularProgressIndicator(color: Colors.red),
+                  child: const CircularProgressIndicator(color: Color(0xFF6B46C1)),
                 )
               : _errorMessage != null
                   ? Container(
@@ -212,7 +212,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       height: MediaQuery.of(context).size.height * 0.5,
                       child: Text(
                         _errorMessage!,
-                        style: const TextStyle(color: Colors.red),
+                        style: const TextStyle(color: Color(0xFF6B46C1)),
                       ),
                     )
                   : Column(
@@ -252,7 +252,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       bottom: 0,
                                       right: 0,
                                       child: Material(
-                                        color: Colors.red,
+                                        color: Color(0xFF6B46C1),
                                         shape: const CircleBorder(),
                                         child: IconButton(
                                           icon: const Icon(Icons.camera_alt,
@@ -318,14 +318,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   decoration: InputDecoration(
                                     labelText: 'Username',
                                     labelStyle:
-                                        const TextStyle(color: Colors.red),
+                                        const TextStyle(color: Color(0xFF6B46C1)),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide:
-                                          const BorderSide(color: Colors.red),
+                                          const BorderSide(color: Color(0xFF6B46C1)),
                                     ),
                                   ),
                                 ),
@@ -333,7 +333,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   const Padding(
                                     padding: EdgeInsets.only(top: 8.0),
                                     child: Text('No username loaded.',
-                                        style: TextStyle(color: Colors.red)),
+                                        style: TextStyle(color: Color(0xFF6B46C1))),
                                   ),
                                 const SizedBox(height: 16),
                                 TextField(
@@ -343,14 +343,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   decoration: InputDecoration(
                                     labelText: 'Bio',
                                     labelStyle:
-                                        const TextStyle(color: Colors.red),
+                                        const TextStyle(color: Color(0xFF6B46C1)),
                                     border: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius: BorderRadius.circular(12),
                                       borderSide:
-                                          const BorderSide(color: Colors.red),
+                                          const BorderSide(color: Color(0xFF6B46C1)),
                                     ),
                                   ),
                                 ),
@@ -358,7 +358,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   const Padding(
                                     padding: EdgeInsets.only(top: 8.0),
                                     child: Text('No bio loaded.',
-                                        style: TextStyle(color: Colors.red)),
+                                        style: TextStyle(color: Color(0xFF6B46C1))),
                                   ),
                                 const SizedBox(height: 24),
                                 Row(
@@ -368,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       onPressed: _saveProfile,
                                       icon: const Icon(Icons.save),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.red,
+                                        backgroundColor: Color(0xFF6B46C1),
                                         foregroundColor: Colors.white,
                                         shape: RoundedRectangleBorder(
                                           borderRadius:

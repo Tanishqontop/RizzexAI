@@ -22,6 +22,8 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasSelection = _selected != null;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -86,7 +88,9 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: _pressed ? const Color(0xFFF0EDF2) : Colors.white,
+                    color: hasSelection 
+                        ? (_pressed ? const Color(0xFF5A3BB1) : const Color(0xFF6B46C1))
+                        : (_pressed ? const Color(0xFFF0EDF2) : Colors.white),
                     shape: BoxShape.circle,
                     border: Border.all(color: const Color(0xFFE7E3E7)),
                     boxShadow: [
@@ -97,7 +101,10 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF1F1F1F)),
+                  child: Icon(
+                    Icons.arrow_forward_ios_rounded, 
+                    color: hasSelection ? Colors.white : const Color(0xFF1F1F1F)
+                  ),
                 ),
               ),
             ),

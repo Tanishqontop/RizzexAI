@@ -17,7 +17,7 @@ class HomeScreen extends StatelessWidget {
       length: 6,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFFFF0000),
+          backgroundColor: const Color(0xFF6B46C1),
           title: const Text('RizzexAI - Your Flirty Wingman',
               style: TextStyle(color: Colors.white)),
           actions: [
@@ -26,11 +26,11 @@ class HomeScreen extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  border: Border.all(color: Color(0xFFFF0000), width: 2),
+                  border: Border.all(color: Color(0xFF6B46C1), width: 2),
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.logout, color: Color(0xFFFF0000)),
+                  icon: const Icon(Icons.logout, color: Color(0xFF6B46C1)),
                   tooltip: 'Log Out',
                   onPressed: () async {
                     await AuthService.signOut();

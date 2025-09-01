@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'home_screen.dart';
 import 'show_person_screen.dart';
 
 class UseDrugScreen extends StatefulWidget {
@@ -19,6 +18,7 @@ class _UseDrugScreenState extends State<UseDrugScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool hasSelection = _selected != null;
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -31,7 +31,7 @@ class _UseDrugScreenState extends State<UseDrugScreen> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.medication_liquid_outlined, size: 40, color: Color(0xFF1F1F1F)),
+                    const Icon(Icons.spa_outlined, size: 40, color: Color(0xFF1F1F1F)),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
@@ -83,7 +83,9 @@ class _UseDrugScreenState extends State<UseDrugScreen> {
                   width: 72,
                   height: 72,
                   decoration: BoxDecoration(
-                    color: _pressed ? const Color(0xFF5A3BB1) : const Color(0xFF6B46C1),
+                    color: hasSelection
+                        ? (_pressed ? const Color(0xFF5A3BB1) : const Color(0xFF6B46C1))
+                        : (_pressed ? const Color(0xFFF0EDF2) : Colors.white),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
@@ -93,7 +95,10 @@ class _UseDrugScreenState extends State<UseDrugScreen> {
                       ),
                     ],
                   ),
-                  child: const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white),
+                  child: Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: hasSelection ? Colors.white : const Color(0xFF1F1F1F)
+                  ),
                 ),
               ),
             ),
