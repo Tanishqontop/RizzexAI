@@ -11,12 +11,23 @@ class StudyScreen extends StatefulWidget {
 
 class _StudyScreenState extends State<StudyScreen> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   bool _visibleOnProfile = true;
   bool _pressed = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Auto-focus the text field when the screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -54,6 +65,12 @@ class _StudyScreenState extends State<StudyScreen> {
                 const SizedBox(height: 24),
                 TextField(
                   controller: _controller,
+                  focusNode: _focusNode,
+                  onChanged: (value) {
+                    setState(() {
+                      // This will trigger a rebuild when text changes
+                    });
+                  },
                   decoration: InputDecoration(
                     hintText: 'Add a college or university',
                     hintStyle: GoogleFonts.inter(color: const Color(0xFF9A979A), fontSize: 22, fontStyle: FontStyle.italic),
