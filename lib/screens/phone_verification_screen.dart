@@ -12,6 +12,7 @@ class PhoneVerificationScreen extends StatefulWidget {
 
 class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   final TextEditingController _phoneController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   String _selectedCountryCode = '+91';
   String _selectedCountryFlag = '🇮🇳';
   bool _isPhoneValid = false;
@@ -20,6 +21,10 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   void initState() {
     super.initState();
     _phoneController.addListener(_validatePhone);
+    // Auto-focus the text field when the screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
   }
 
   void _validatePhone() {
@@ -33,6 +38,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   @override
   void dispose() {
     _phoneController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -137,6 +143,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                     Expanded(
                       child: TextField(
                         controller: _phoneController,
+                        focusNode: _focusNode,
                         keyboardType: TextInputType.phone,
                         inputFormatters: [
                           // Allow only digits, and cap at a reasonable max length
