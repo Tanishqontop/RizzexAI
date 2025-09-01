@@ -12,6 +12,7 @@ class NameEntryScreen extends StatefulWidget {
 class _NameEntryScreenState extends State<NameEntryScreen> {
   final TextEditingController _firstController = TextEditingController();
   final TextEditingController _lastController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
 
   bool get _isValid => _firstController.text.trim().isNotEmpty;
 
@@ -19,12 +20,17 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
   void initState() {
     super.initState();
     _firstController.addListener(() => setState(() {}));
+    // Auto-focus the text field when the screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
   }
 
   @override
   void dispose() {
     _firstController.dispose();
     _lastController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -55,6 +61,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                     const SizedBox(height: 24),
                     TextField(
                       controller: _firstController,
+                      focusNode: _focusNode,
                       decoration: InputDecoration(
                         hintText: 'First name (required)',
                         hintStyle: GoogleFonts.inter(color: Colors.grey[500]),

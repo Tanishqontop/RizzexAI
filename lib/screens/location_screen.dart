@@ -11,6 +11,7 @@ class LocationScreen extends StatefulWidget {
 
 class _LocationScreenState extends State<LocationScreen> {
   final TextEditingController _locationController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   bool _isNextPressed = false;
   bool _hasText = false;
 
@@ -18,12 +19,17 @@ class _LocationScreenState extends State<LocationScreen> {
   void initState() {
     super.initState();
     _locationController.addListener(_onTextChanged);
+    // Auto-focus the text field when the screen loads
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
   }
 
   @override
   void dispose() {
     _locationController.removeListener(_onTextChanged);
     _locationController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -117,6 +123,7 @@ class _LocationScreenState extends State<LocationScreen> {
                   const SizedBox(height: 24),
                   TextField(
                     controller: _locationController,
+                    focusNode: _focusNode,
                     textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
                       hintText: 'District, State, Country',
