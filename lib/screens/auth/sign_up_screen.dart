@@ -3,6 +3,7 @@ import '../../services/auth_service.dart';
 import '../home_screen.dart';
 import 'sign_in_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../phone_verification_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -41,7 +42,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const PhoneVerificationScreen()),
           (route) => false,
         );
       }
@@ -61,6 +62,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         OAuthProvider.google,
         redirectTo: 'com.example.rizzexai://login-callback/',
       );
+      // AuthWrapper will handle navigation based on phone verification status
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -108,7 +110,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
             height: size.height * 0.38,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFFF0000), Color(0xFFB71C1C)],
+                colors: [Color(0xFF6B46C1), Color(0xFF5A3BB1)],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -253,8 +255,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                     decoration: BoxDecoration(
                                       gradient: const LinearGradient(
                                         colors: [
-                                          Color(0xFFFF0000),
-                                          Color(0xFFB71C1C)
+                                          Color(0xFF6B46C1),
+                                          Color(0xFF5A3BB1)
                                         ],
                                         begin: Alignment.centerLeft,
                                         end: Alignment.centerRight,

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'config/supabase_config.dart';
 import 'screens/home_screen.dart';
 import 'screens/auth/sign_in_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'screens/phone_verification_screen.dart';
 import 'dart:async';
 
 void main() async {
@@ -32,6 +35,7 @@ class MyApp extends StatelessWidget {
       ),
       home: const AuthWrapper(),
       routes: {
+        '/onboarding': (context) => const OnboardingScreen(),
         '/signin': (context) => const SignInScreen(),
         '/reset-password': (context) => const ResetPasswordScreen(),
       },
@@ -51,6 +55,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Session? _currentSession;
   StreamSubscription? _linkSubscription;
   final AppLinks _appLinks = AppLinks();
+  bool _isPhoneVerified = false; // Track phone verification status
 
   @override
   void initState() {
@@ -59,6 +64,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     _setupAuthListener();
     _checkCurrentSession();
     _initDeepLinkHandling();
+    _checkPhoneVerificationStatus();
   }
 
   void _setupAuthListener() {
@@ -120,6 +126,17 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
   }
 
+  Future<void> _checkPhoneVerificationStatus() async {
+    if (_currentSession != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = _currentSession!.user.id;
+      _isPhoneVerified = prefs.getBool('phone_verified_$userId') ?? false;
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
   void _initDeepLinkHandling() {
     // Handle links when app is already running
     _linkSubscription = _appLinks.uriLinkStream.listen((Uri? uri) {
@@ -131,7 +148,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     });
 
     // Handle links when app is opened from a link
-    _appLinks.getInitialAppLink().then((Uri? uri) {
+    _appLinks.getInitialLink().then((Uri? uri) {
       if (uri != null) {
         _handleDeepLink(uri);
       }
@@ -183,9 +200,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
 
     if (_currentSession != null) {
-      return const HomeScreen();
+      // Check if user has completed phone verification
+      if (_isPhoneVerified) {
+        return const HomeScreen();
+      } else {
+        // User is signed in but hasn't verified phone - show phone verification
+        return const PhoneVerificationScreen();
+      }
     } else {
-      return const SignInScreen();
+      return const OnboardingScreen();
     }
   }
 
