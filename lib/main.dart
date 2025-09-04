@@ -130,7 +130,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
     if (_currentSession != null) {
       final prefs = await SharedPreferences.getInstance();
       final userId = _currentSession!.user.id;
-      _isEmailVerified = prefs.getBool('email_verified_$userId') ?? false;
+      // For existing users, consider them email verified by default
+      // Only new signups need OTP verification
+      _isEmailVerified = prefs.getBool('email_verified_$userId') ?? true;
       if (mounted) {
         setState(() {});
       }
