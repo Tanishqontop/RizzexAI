@@ -7,7 +7,7 @@ import 'screens/home_screen.dart';
 import 'screens/auth/sign_in_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
 import 'screens/onboarding_screen.dart';
-import 'screens/phone_verification_screen.dart';
+import 'screens/otp_verification_screen.dart';
 import 'dart:async';
 
 void main() async {
@@ -55,7 +55,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Session? _currentSession;
   StreamSubscription? _linkSubscription;
   final AppLinks _appLinks = AppLinks();
-  bool _isPhoneVerified = false; // Track phone verification status
+  bool _isEmailVerified = false; // Track email verification status
 
   @override
   void initState() {
@@ -64,7 +64,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     _setupAuthListener();
     _checkCurrentSession();
     _initDeepLinkHandling();
-    _checkPhoneVerificationStatus();
+    _checkEmailVerificationStatus();
   }
 
   void _setupAuthListener() {
@@ -126,11 +126,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
   }
 
-  Future<void> _checkPhoneVerificationStatus() async {
+  Future<void> _checkEmailVerificationStatus() async {
     if (_currentSession != null) {
       final prefs = await SharedPreferences.getInstance();
       final userId = _currentSession!.user.id;
-      _isPhoneVerified = prefs.getBool('phone_verified_$userId') ?? false;
+      _isEmailVerified = prefs.getBool('email_verified_$userId') ?? false;
       if (mounted) {
         setState(() {});
       }
@@ -200,12 +200,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
 
     if (_currentSession != null) {
-      // Check if user has completed phone verification
-      if (_isPhoneVerified) {
+      if (_isEmailVerified) {
         return const HomeScreen();
       } else {
-        // User is signed in but hasn't verified phone - show phone verification
-        return const PhoneVerificationScreen();
+        final email = _currentSession!.user.email ?? '';
+        return OtpVerificationScreen(recipient: email);
       }
     } else {
       return const OnboardingScreen();

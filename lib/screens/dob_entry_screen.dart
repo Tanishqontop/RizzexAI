@@ -12,6 +12,7 @@ class DobEntryScreen extends StatefulWidget {
 class _DobEntryScreenState extends State<DobEntryScreen> {
   DateTime? _selectedDate;
   int? _calculatedAge;
+  bool _pressed = false;
 
   bool get _hasValidDate => _selectedDate != null;
 
@@ -87,14 +88,16 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 16),
-              // Main content centered
-              Expanded(
-                child: Column(
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
+                // Main content centered
+                Expanded(
+                  child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -185,28 +188,49 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
                   ],
                 ),
               ),
-              // Bottom navigation
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 24.0),
-                  child: FloatingActionButton(
-                    heroTag: 'dob-next',
-                    backgroundColor: _hasValidDate ? const Color(0xFF6B46C1) : Colors.grey[300],
-                    onPressed: _hasValidDate ? _showAgeConfirmation : null,
-                    child: Icon(
-                      Icons.arrow_forward,
-                      color: _hasValidDate ? Colors.white : Colors.grey[600],
-                    ),
+                ],
+              ),
+            ),
+            Positioned(
+              right: 24,
+              bottom: 24,
+              child: GestureDetector(
+                onTapDown: (_) => setState(() => _pressed = true),
+                onTapCancel: () => setState(() => _pressed = false),
+                onTapUp: (_) {
+                  setState(() => _pressed = false);
+                  if (_hasValidDate) {
+                    _showAgeConfirmation();
+                  }
+                },
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: _hasValidDate 
+                        ? (_pressed ? const Color(0xFF5A3BB1) : const Color(0xFF6B46C1))
+                        : (_pressed ? const Color(0xFFF0EDF2) : Colors.white),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFE7E3E7)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 10,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: _hasValidDate ? Colors.white : const Color(0xFF1F1F1F),
                   ),
                 ),
-              )
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
-
 
