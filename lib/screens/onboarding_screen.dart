@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
-import 'package:chewie/chewie.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'auth/sign_in_screen.dart';
 import 'auth/sign_up_screen.dart';
@@ -13,139 +11,23 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
-  late VideoPlayerController _videoPlayerController;
-  ChewieController? _chewieController;
-  bool _isVideoInitialized = false;
-  bool _isVideoLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeVideo();
-  }
-
-  Future<void> _initializeVideo() async {
-    setState(() => _isVideoLoading = true);
-    
-    try {
-      _videoPlayerController = VideoPlayerController.asset(
-        'assets/video/intro.mp4',
-        videoPlayerOptions: VideoPlayerOptions(
-          mixWithOthers: true,
-          allowBackgroundPlayback: false,
-        ),
-      );
-      
-      await _videoPlayerController.initialize();
-      
-      _chewieController = ChewieController(
-        videoPlayerController: _videoPlayerController,
-        autoPlay: true,
-        looping: true,
-        showControls: false,
-        aspectRatio: _videoPlayerController.value.aspectRatio,
-        allowFullScreen: false,
-        allowMuting: true,
-        autoInitialize: true,
-        placeholder: Container(
-          color: Colors.black,
-          child: const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-          ),
-        ),
-      );
-      
-      setState(() {
-        _isVideoInitialized = true;
-        _isVideoLoading = false;
-      });
-      
-      print('Chewie controller created successfully');
-      
-      if (mounted) {
-        setState(() {
-          _isVideoInitialized = true;
-        });
-        print('Video is now initialized and ready to display');
-        
-        // Start playing the video
-        await _videoPlayerController.play();
-        print('Video playback started');
-      }
-    } catch (e) {
-      print('Error initializing video: $e');
-      print('Stack trace: ${StackTrace.current}');
-      // Fallback to a placeholder if video fails to load
-      if (mounted) {
-        setState(() {
-          _isVideoInitialized = true;
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _videoPlayerController.dispose();
-    _chewieController?.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Video Background
-          Stack(
-            children: [
-              if (_isVideoInitialized && _chewieController != null)
-                Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  child: FittedBox(
-                    fit: BoxFit.cover,
-                    child: SizedBox(
-                      width: _videoPlayerController.value.size.width,
-                      height: _videoPlayerController.value.size.height,
-                      child: Chewie(controller: _chewieController!),
-                    ),
-                  ),
-                ),
-              if (_isVideoLoading)
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color(0xFF1a1a2e),
-                        Color(0xFF16213e),
-                      ],
-                    ),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Loading video...',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
+          // Background Image
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage('assets/graham-mansfield-QSU_wnytL00-unsplash.jpg'),
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
+            ),
           ),
           
           // Dark overlay

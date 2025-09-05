@@ -6,11 +6,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'basic_info_intro_screen.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
-  final String phoneNumber;
+  final String recipient; // email address
 
   const OtpVerificationScreen({
     super.key,
-    required this.phoneNumber,
+    required this.recipient,
   });
 
   @override
@@ -107,7 +107,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               
               // Title
               Text(
-                'Enter your verification code',
+                'Enter your verification code from mail',
                 style: GoogleFonts.inter(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -117,11 +117,11 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               
               const SizedBox(height: 16),
               
-              // Phone number info
+              // Recipient info
               Row(
                 children: [
                   Text(
-                    'Sent to ${widget.phoneNumber}. ',
+                    'Sent to ${widget.recipient}. ',
                     style: GoogleFonts.inter(
                       fontSize: 16,
                       color: Colors.grey[600],
@@ -275,14 +275,14 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
   Future<void> _verifyOtp() async {
     if (_isOtpComplete) {
       try {
-        // In real implementation, you would verify the OTP with your backend
-        // For now, we'll just mark the phone as verified locally
+        // In real implementation, verify the OTP with your backend/email provider
+        // For now, we'll just mark the email as verified locally
         
         final session = Supabase.instance.client.auth.currentSession;
         if (session != null) {
           final prefs = await SharedPreferences.getInstance();
           final userId = session.user.id;
-          await prefs.setBool('phone_verified_$userId', true);
+          await prefs.setBool('email_verified_$userId', true);
         }
         
         // Navigate to onboarding intro after OTP

@@ -91,8 +91,9 @@ class _LocationScreenState extends State<LocationScreen> {
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: const Color(0xFFE7E3E7)),
                       image: const DecorationImage(
-                        image: AssetImage('assets/adolfo-felix-4JL_VAgxwcU-unsplash.jpg'),
-                        fit: BoxFit.cover,
+                        image: AssetImage('assets/round-icons-lEvCd62sbKs-unsplash.jpg'),
+                        fit: BoxFit.fill,
+                        alignment: Alignment.center,
                       ),
                     ),
                     child: Stack(
