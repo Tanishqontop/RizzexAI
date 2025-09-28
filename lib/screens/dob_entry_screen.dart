@@ -26,9 +26,11 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
+      initialDate:
+          DateTime.now().subtract(const Duration(days: 6570)), // 18 years
+      firstDate:
+          DateTime.now().subtract(const Duration(days: 36500)), // 100 years
+      lastDate: DateTime.now().subtract(const Duration(days: 6570)), // 18 years
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(

@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'config/supabase_config.dart';
-import 'screens/main_navigation_screen.dart';
+import 'screens/home_screen.dart';
 import 'screens/auth/sign_in_screen.dart';
 import 'screens/auth/reset_password_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -203,7 +203,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
     if (_currentSession != null) {
       if (_isEmailVerified) {
+<<<<<<< HEAD
         return const MainNavigationScreen();
+=======
+        return const HomeScreen();
+>>>>>>> 130362ab36fd46f347c64ccc7fe6ff61de81730f
       } else {
         final email = _currentSession!.user.email ?? '';
         return OtpVerificationScreen(recipient: email);
