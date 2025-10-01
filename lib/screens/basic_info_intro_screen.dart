@@ -4,7 +4,6 @@ import 'name_entry_screen.dart';
 
 class BasicInfoIntroScreen extends StatelessWidget {
   const BasicInfoIntroScreen({super.key});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

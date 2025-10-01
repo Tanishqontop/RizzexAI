@@ -203,7 +203,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
     if (_currentSession != null) {
       if (_isEmailVerified) {
+<<<<<<< HEAD
+        return const MainNavigationScreen();
+=======
         return const HomeScreen();
+>>>>>>> 130362ab36fd46f347c64ccc7fe6ff61de81730f
       } else {
         final email = _currentSession!.user.email ?? '';
         return OtpVerificationScreen(recipient: email);
