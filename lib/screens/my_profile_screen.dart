@@ -22,20 +22,6 @@ class MyProfileScreen extends StatelessWidget {
                 border: Border.all(color: const Color(0xFF6B46C1), width: 2),
                 borderRadius: BorderRadius.circular(30),
               ),
-              child: IconButton(
-                icon: const Icon(Icons.logout, color: Color(0xFF6B46C1)),
-                tooltip: 'Log Out',
-                onPressed: () async {
-                  await AuthService.signOut();
-                  if (context.mounted) {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                          builder: (context) => const SignInScreen()),
-                      (route) => false,
-                    );
-                  }
-                },
-              ),
             ),
           ),
         ],
