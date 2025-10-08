@@ -34,7 +34,9 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
     // Auto-focus first box and open keyboard
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _focusNodes.first.requestFocus();
+        final idx = _firstEmptyIndex();
+        _focusNodes[idx].requestFocus();
+        SystemChannels.textInput.invokeMethod('TextInput.show');
       }
     });
   }
@@ -152,6 +154,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                     child: TextField(
                       controller: _otpControllers[index],
                       focusNode: _focusNodes[index],
+                      autofocus: index == 0,
                       keyboardType: TextInputType.number,
                       textInputAction: index < 5 ? TextInputAction.next : TextInputAction.done,
                       textAlign: TextAlign.center,
