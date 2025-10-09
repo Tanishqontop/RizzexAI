@@ -78,8 +78,6 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // DEBUG: This line will print the state of the button to your console.
-    print('First Name: "${_firstController.text}", Is Valid: $_isValid');
 
     return Scaffold(
       backgroundColor: Colors.white,

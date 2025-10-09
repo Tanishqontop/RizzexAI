@@ -19,6 +19,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   Map<String, dynamic>? _profileData;
   bool _loading = true;
   bool _saving = false;
+  bool _profilePictureRemoved = false;
 
   // Helpers
   int _calculateAge(DateTime dob) {
@@ -29,6 +30,83 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     }
     return age;
   }
+
+  // Onboarding option sets (reused here)
+  static const List<String> _pronounOptions = [
+    'she', 'her', 'hers', 'he', 'him', 'his', 'they', 'them'
+  ];
+  static const List<String> _genderOptions = ['Man', 'Woman', 'Non-binary'];
+  static const List<String> _sexualityOptions = [
+    'Prefer not to say',
+    'Straight',
+    'Gay',
+    'Lesbian',
+    'Bisexual',
+    'Allosexual',
+    'Androsexual',
+    'Asexual',
+    'Autosexual',
+    'Bicurious',
+  ];
+  static const List<String> _likeToDateOptions = [
+    'Men', 'Women', 'Non-binary people', 'Everyone'
+  ];
+  static const List<String> _datingIntentionOptions = [
+    'Life partner',
+    'Long-term relationship',
+    'Long-term relationship, open to short',
+    'Short-term relationship, open to long',
+    'Short-term relationship',
+    'Figuring out my dating goals',
+    'Prefer not to say',
+  ];
+  static const List<String> _relationshipTypeOptions = [
+    'Monogamy', 'Non-monogamy', 'Figuring out my relationship type'
+  ];
+  static const List<String> _ethnicityOptions = [
+    'Black/African Descent',
+    'East Asian',
+    'Hispanic/Latino',
+    'Middle Eastern',
+    'Native American',
+    'Pacific Islander',
+    'South Asian',
+    'Southeast Asian',
+    'White/Caucasian',
+    'Other',
+  ];
+  static const List<String> _childrenOptions = [
+    "Don't have children", 'Have children', 'Prefer not to say'
+  ];
+  static const List<String> _familyPlanOptions = [
+    "Don't want children",
+    'Want children',
+    'Open to children',
+    'Not sure yet',
+    'Prefer not to say',
+  ];
+  static const List<String> _educationLevelOptions = [
+    'Secondary school', 'Undergrad', 'Postgrad', 'Prefer not to say'
+  ];
+  static const List<String> _religiousBeliefOptions = [
+    'Agnostic',
+    'Atheist',
+    'Buddhist',
+    'Catholic',
+    'Christian',
+    'Hindu',
+    'Jewish',
+    'Muslim',
+    'Sikh',
+    'Spiritual',
+    'Other',
+  ];
+  static const List<String> _politicalBeliefOptions = [
+    'Liberal', 'Moderate', 'Conservative', 'Not political', 'Other', 'Prefer not to say'
+  ];
+  static const List<String> _yesSometimesNoOptions = [
+    'Yes', 'Sometimes', 'No', 'Prefer not to say'
+  ];
 
   @override
   void initState() {
@@ -46,6 +124,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       if (profile != null) {
         setState(() {
           _profileData = profile;
+          // Check if user has explicitly removed their profile picture
+          final avatarUrl = profile['avatar_url']?.toString();
+          _profilePictureRemoved = avatarUrl != null && avatarUrl.isEmpty;
         });
       }
     } catch (e) {
@@ -63,17 +144,81 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   Future<void> _updateProfilePicture() async {
     if (_currentUser == null) return;
     
+    // Show image source selection
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Color(0xFF6B46C1)),
+                title: const Text('Choose from Gallery'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickAndUploadImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFF6B46C1)),
+                title: const Text('Take Photo'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickAndUploadImage(ImageSource.camera);
+                },
+              ),
+              if (_getProfileImageUrl().isNotEmpty)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('Remove Profile Picture'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _removeProfilePicture();
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAndUploadImage(ImageSource source) async {
+    if (_currentUser == null) return;
+    
     final picker = ImagePicker();
-    final result = await picker.pickImage(source: ImageSource.gallery);
+    final result = await picker.pickImage(
+      source: source,
+      imageQuality: 85, // Compress image for better performance
+      maxWidth: 1024,
+      maxHeight: 1024,
+    );
     
     if (result != null) {
       setState(() => _saving = true);
       try {
         final file = File(result.path);
+        
+        // Validate file size (max 5MB)
+        final fileSize = await file.length();
+        if (fileSize > 5 * 1024 * 1024) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Image too large. Please choose an image smaller than 5MB.')),
+            );
+          }
+          return;
+        }
+        
         final url = await _profileService.uploadProfileMedia(
           userId: _currentUser!.id,
           file: file,
         );
+        
         
         // Update the profile with new avatar URL
         await _profileService.upsertProfile(
@@ -81,18 +226,92 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           avatarUrl: url,
         );
         
+        // Reset the removed flag since user has set a new profile picture
+        setState(() {
+          _profilePictureRemoved = false;
+        });
+        
         // Reload profile data
         await _loadProfileData();
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile picture updated!')),
+            const SnackBar(
+              content: Text('Profile picture updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error updating picture: $e')),
+            SnackBar(
+              content: Text('Error updating picture: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        setState(() => _saving = false);
+      }
+    }
+  }
+
+  Future<void> _removeProfilePicture() async {
+    if (_currentUser == null) return;
+    
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Profile Picture'),
+        content: const Text('Are you sure you want to remove your profile picture?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed == true) {
+      setState(() => _saving = true);
+      try {
+        // Clear the avatar URL
+        await _profileService.upsertProfile(
+          userId: _currentUser!.id,
+          avatarUrl: '',
+        );
+        
+        // Set flag to indicate profile picture was removed
+        setState(() {
+          _profilePictureRemoved = true;
+        });
+        
+        // Reload profile data
+        await _loadProfileData();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile picture removed successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error removing picture: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       } finally {
@@ -105,14 +324,24 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   String _getProfileImageUrl() {
     if (_profileData == null) return '';
     
-    // Get the first image from profile_photos array
-    final photos = _profileData!['profile_photos'] as List<dynamic>?;
-    if (photos != null && photos.isNotEmpty) {
-      return photos.first.toString();
+    // If user has explicitly removed their profile picture, don't show any image
+    if (_profilePictureRemoved) {
+      return '';
     }
     
-    // Fallback to avatar_url
-    return _profileData!['avatar_url'] ?? '';
+    // Check if user has set a profile picture
+    final avatarUrl = _profileData!['avatar_url']?.toString();
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      return avatarUrl;
+    }
+    
+    // Fallback to first media in media_urls (onboarding uploads) only if no profile picture removed
+    final media = _profileData!['media_urls'] as List<dynamic>?;
+    if (media != null && media.isNotEmpty) {
+      return media.first.toString();
+    }
+    
+    return '';
   }
 
   String _getFullName() {
@@ -149,13 +378,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               child: Column(
                 children: [
                   // Profile Picture Section
-                  Stack(
+                  Center(
+                    child: Stack(
                     children: [
                       GestureDetector(
                         onTap: _updateProfilePicture,
                         child: Container(
-                          width: 120,
-                          height: 120,
+                            width: 140,
+                            height: 140,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: const Color(0xFF6B46C1).withOpacity(0.1),
@@ -163,24 +393,42 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                               color: const Color(0xFF6B46C1),
                               width: 3,
                             ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF6B46C1).withOpacity(0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                           ),
-                          child: _getProfileImageUrl().isNotEmpty
-                              ? ClipOval(
-                                  child: Image.network(
-                                    _getProfileImageUrl(),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Icon(
-                                        Icons.person,
-                                        size: 60,
-                                        color: Color(0xFF6B46C1),
-                                      );
-                                    },
-                                  ),
-                                )
+                            child: _getProfileImageUrl().isNotEmpty
+                                ? ClipOval(
+                                    child: Image.network(
+                                      _getProfileImageUrl(),
+                                      fit: BoxFit.cover,
+                                      cacheWidth: 140,
+                                      cacheHeight: 140,
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return const Center(
+                                          child: CircularProgressIndicator(
+                                            color: Color(0xFF6B46C1),
+                                            strokeWidth: 2,
+                                          ),
+                                        );
+                                      },
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return const Icon(
+                                          Icons.person,
+                                          size: 70,
+                                          color: Color(0xFF6B46C1),
+                                        );
+                                      },
+                                    ),
+                                  )
                               : const Icon(
                                   Icons.person,
-                                  size: 60,
+                                    size: 70,
                                   color: Color(0xFF6B46C1),
                                 ),
                         ),
@@ -190,37 +438,59 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             child: Container(
               decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.black.withOpacity(0.5),
+                                color: Colors.black.withOpacity(0.6),
                             ),
                             child: const Center(
-                              child: CircularProgressIndicator(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CircularProgressIndicator(
                                 color: Colors.white,
-                                strokeWidth: 2,
-                              ),
+                                      strokeWidth: 3,
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Updating...',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                             ),
                           ),
                         ),
                       Positioned(
-                        bottom: 0,
-                        right: 0,
+                          bottom: 8,
+                          right: 8,
                         child: GestureDetector(
                           onTap: _updateProfilePicture,
                           child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF6B46C1),
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF6B46C1),
                               shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                             ),
                             child: const Icon(
                               Icons.camera_alt,
                 color: Colors.white,
-                              size: 16,
+                                size: 18,
                             ),
               ),
             ),
           ),
         ],
+                    ),
       ),
                   
                   const SizedBox(height: 16),
@@ -267,18 +537,49 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         _buildToggleRow('Notifications', 'notifications_enabled', (_profileData?['notifications_enabled'] as bool?) ?? false),
 
                         // Identity
-                        _buildEditableRow('Pronouns (comma separated)', 'pronouns', ((_profileData?['pronouns'] as List<dynamic>?)?.join(', ') ?? ''), isList: true),
+                        _buildMultiSelectRow(
+                          'Pronouns',
+                          'pronouns',
+                          ((_profileData?['pronouns'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const []),
+                          _pronounOptions,
+                          maxSelections: 4,
+                        ),
                         _buildVisibilitySwitch('Pronouns visible', 'pronouns_visible', (_profileData?['pronouns_visible'] as bool?) ?? true),
-                        _buildEditableRow('Gender', 'gender', _profileData?['gender']?.toString() ?? ''),
+                        _buildSingleSelectRow(
+                          'Gender',
+                          'gender',
+                          _profileData?['gender']?.toString() ?? '',
+                          _genderOptions,
+                        ),
                         _buildVisibilitySwitch('Gender visible', 'gender_visible', (_profileData?['gender_visible'] as bool?) ?? true),
-                        _buildEditableRow('Sexuality', 'sexuality', _profileData?['sexuality']?.toString() ?? ''),
+                        _buildSingleSelectRow(
+                          'Sexuality',
+                          'sexuality',
+                          _profileData?['sexuality']?.toString() ?? '',
+                          _sexualityOptions,
+                        ),
                         _buildVisibilitySwitch('Sexuality visible', 'sexuality_visible', (_profileData?['sexuality_visible'] as bool?) ?? true),
 
                         // Preferences
-                        _buildEditableRow('Like to date (comma separated)', 'dating_preference', ((_profileData?['dating_preference'] as List<dynamic>?)?.join(', ') ?? ''), isList: true),
-                        _buildEditableRow('Dating intention', 'dating_intention', _profileData?['dating_intention']?.toString() ?? ''),
+                        _buildMultiSelectRow(
+                          'Like to date',
+                          'dating_preference',
+                          ((_profileData?['dating_preference'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const []),
+                          _likeToDateOptions,
+                        ),
+                        _buildSingleSelectRow(
+                          'Dating intention',
+                          'dating_intention',
+                          _profileData?['dating_intention']?.toString() ?? '',
+                          _datingIntentionOptions,
+                        ),
                         _buildVisibilitySwitch('Dating intention visible', 'dating_intention_visible', (_profileData?['dating_intention_visible'] as bool?) ?? true),
-                        _buildEditableRow('Type of relationship (comma separated)', 'relationship_type', ((_profileData?['relationship_type'] as List<dynamic>?)?.join(', ') ?? ''), isList: true),
+                        _buildMultiSelectRow(
+                          'Type of relationship',
+                          'relationship_type',
+                          ((_profileData?['relationship_type'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const []),
+                          _relationshipTypeOptions,
+                        ),
                         _buildVisibilitySwitch('Relationship type visible', 'relationship_type_visible', (_profileData?['relationship_type_visible'] as bool?) ?? true),
 
                         // Location
@@ -288,13 +589,28 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
                         // Physical
                         _buildEditableRow('Height (cm)', 'height_cm', (_profileData?['height_cm']?.toString() ?? ''), isNumber: true),
-                        _buildEditableRow('Ethnicity (comma separated)', 'ethnicity', ((_profileData?['ethnicity'] as List<dynamic>?)?.join(', ') ?? ''), isList: true),
+                        _buildMultiSelectRow(
+                          'Ethnicity',
+                          'ethnicity',
+                          ((_profileData?['ethnicity'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const []),
+                          _ethnicityOptions,
+                        ),
                         _buildVisibilitySwitch('Ethnicity visible', 'ethnicity_visible', (_profileData?['ethnicity_visible'] as bool?) ?? true),
 
                         // Family
-                        _buildEditableRow('Have children (status)', 'children_status', _profileData?['children_status']?.toString() ?? ''),
+                        _buildSingleSelectRow(
+                          'Have children',
+                          'children_status',
+                          _profileData?['children_status']?.toString() ?? '',
+                          _childrenOptions,
+                        ),
                         _buildVisibilitySwitch('Children status visible', 'children_status_visible', (_profileData?['children_status_visible'] as bool?) ?? true),
-                        _buildEditableRow('Family plan', 'family_plans', _profileData?['family_plans']?.toString() ?? ''),
+                        _buildSingleSelectRow(
+                          'Family plan',
+                          'family_plans',
+                          _profileData?['family_plans']?.toString() ?? '',
+                          _familyPlanOptions,
+                        ),
                         _buildVisibilitySwitch('Family plan visible', 'family_plans_visible', (_profileData?['family_plans_visible'] as bool?) ?? true),
 
                         // Work & Education
@@ -304,23 +620,58 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         _buildVisibilitySwitch('Job title visible', 'job_title_visible', (_profileData?['job_title_visible'] as bool?) ?? true),
                         _buildEditableRow('College', 'education', _profileData?['education']?.toString() ?? ''),
                         _buildVisibilitySwitch('College visible', 'education_visible', (_profileData?['education_visible'] as bool?) ?? true),
-                        _buildEditableRow('Highest education level', 'education_level', _profileData?['education_level']?.toString() ?? ''),
+                        _buildSingleSelectRow(
+                          'Highest education level',
+                          'education_level',
+                          _profileData?['education_level']?.toString() ?? '',
+                          _educationLevelOptions,
+                        ),
                         _buildVisibilitySwitch('Education level visible', 'education_level_visible', (_profileData?['education_level_visible'] as bool?) ?? true),
 
                         // Beliefs
-                        _buildEditableRow('Religious beliefs (comma separated)', 'religious_beliefs', ((_profileData?['religious_beliefs'] as List<dynamic>?)?.join(', ') ?? ''), isList: true),
+                        _buildMultiSelectRow(
+                          'Religious beliefs',
+                          'religious_beliefs',
+                          ((_profileData?['religious_beliefs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const []),
+                          _religiousBeliefOptions,
+                        ),
                         _buildVisibilitySwitch('Religious beliefs visible', 'religious_beliefs_visible', (_profileData?['religious_beliefs_visible'] as bool?) ?? true),
-                        _buildEditableRow('Political belief', 'political_beliefs', _profileData?['political_beliefs']?.toString() ?? ''),
+                        _buildSingleSelectRow(
+                          'Political belief',
+                          'political_beliefs',
+                          _profileData?['political_beliefs']?.toString() ?? '',
+                          _politicalBeliefOptions,
+                        ),
                         _buildVisibilitySwitch('Political belief visible', 'political_beliefs_visible', (_profileData?['political_beliefs_visible'] as bool?) ?? true),
 
                         // Lifestyle
-                        _buildEditableRow('Drink (status)', 'drinking_status', _profileData?['drinking_status']?.toString() ?? ''),
+                        _buildSingleSelectRow(
+                          'Drink',
+                          'drinking_status',
+                          _profileData?['drinking_status']?.toString() ?? '',
+                          _yesSometimesNoOptions,
+                        ),
                         _buildVisibilitySwitch('Drink status visible', 'drinking_status_visible', (_profileData?['drinking_status_visible'] as bool?) ?? true),
-                        _buildEditableRow('Smoke (status)', 'smoking_status', _profileData?['smoking_status']?.toString() ?? ''),
+                        _buildSingleSelectRow(
+                          'Smoke',
+                          'smoking_status',
+                          _profileData?['smoking_status']?.toString() ?? '',
+                          _yesSometimesNoOptions,
+                        ),
                         _buildVisibilitySwitch('Smoke status visible', 'smoking_status_visible', (_profileData?['smoking_status_visible'] as bool?) ?? true),
-                        _buildEditableRow('Weed (status)', 'weed_status', _profileData?['weed_status']?.toString() ?? ''),
+                        _buildSingleSelectRow(
+                          'Weed',
+                          'weed_status',
+                          _profileData?['weed_status']?.toString() ?? '',
+                          _yesSometimesNoOptions,
+                        ),
                         _buildVisibilitySwitch('Weed status visible', 'weed_status_visible', (_profileData?['weed_status_visible'] as bool?) ?? true),
-                        _buildEditableRow('Drug (status)', 'drug_status', _profileData?['drug_status']?.toString() ?? ''),
+                        _buildSingleSelectRow(
+                          'Drug',
+                          'drug_status',
+                          _profileData?['drug_status']?.toString() ?? '',
+                          _yesSometimesNoOptions,
+                        ),
                         _buildVisibilitySwitch('Drug status visible', 'drug_status_visible', (_profileData?['drug_status_visible'] as bool?) ?? true),
 
                         _buildEditableRow('Bio', 'bio', _profileData?['bio']?.toString() ?? ''),
@@ -415,6 +766,232 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     );
   }
 
+  Widget _buildSingleSelectRow(
+      String label, String fieldKey, String currentValue, List<String> options) {
+    final display = currentValue.isEmpty ? 'Not set' : currentValue;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  display,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF1F1F1F),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: _saving
+                ? null
+                : () => _showSingleSelectSheet(label, fieldKey, currentValue, options),
+            icon: const Icon(Icons.edit, size: 16),
+            label: const Text('Edit'),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF6B46C1),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSingleSelectSheet(
+      String label, String fieldKey, String currentValue, List<String> options) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: Text(
+                    'Select $label',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF1F1F1F),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ...options.map((o) => ListTile(
+                      title: Text(o),
+                      trailing:
+                          currentValue == o ? const Icon(Icons.check, color: Color(0xFF6B46C1)) : null,
+                      onTap: () async {
+                        Navigator.of(context).pop();
+                        await _saveField(fieldKey, o);
+                      },
+                    )),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMultiSelectRow(String label, String fieldKey, List<String> values,
+      List<String> options, {int? maxSelections}) {
+    final display = values.isEmpty ? 'Not set' : values.join(', ');
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  display,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF1F1F1F),
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton.icon(
+            onPressed: _saving
+                ? null
+                : () => _showMultiSelectSheet(
+                      label,
+                      fieldKey,
+                      values,
+                      options,
+                      maxSelections: maxSelections,
+                    ),
+            icon: const Icon(Icons.edit, size: 16),
+            label: const Text('Edit'),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF6B46C1),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMultiSelectSheet(String label, String fieldKey, List<String> values,
+      List<String> options, {int? maxSelections}) {
+    final Set<String> selected = values.toSet();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setModalState) {
+          return SafeArea(
+            child: Padding(
+              padding:
+                  EdgeInsets.only(left: 8, right: 8, bottom: MediaQuery.of(context).viewInsets.bottom + 8, top: 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Select $label',
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF1F1F1F),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ...options.map((o) {
+                    final isSelected = selected.contains(o);
+                    return CheckboxListTile(
+                      value: isSelected,
+                      controlAffinity: ListTileControlAffinity.leading,
+                      activeColor: const Color(0xFF6B46C1),
+                      title: Text(o),
+                      onChanged: (v) {
+                        setModalState(() {
+                          if (isSelected) {
+                            selected.remove(o);
+                          } else {
+                            if (maxSelections == null || selected.length < maxSelections) {
+                              selected.add(o);
+                            }
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.of(context).pop();
+                        await _saveField(fieldKey, selected.join(','), isList: true);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF6B46C1),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Save', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        });
+      },
+    );
+  }
   Widget _buildToggleRow(String label, String boolKey, bool current) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -537,7 +1114,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       context: context,
       initialDate: initial,
       firstDate: DateTime(1900),
-      lastDate: DateTime(now.year - 18, now.month, now.day),
+      lastDate: DateTime(now.year - 10, now.month, now.day),
       helpText: 'Select your date of birth',
       builder: (context, child) {
         return Theme(
