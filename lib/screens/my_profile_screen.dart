@@ -529,14 +529,18 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        // Basics
+                        
+                        // Basics Section
+                        _buildSectionHeader('Basic Information'),
                         _buildEditableRow('First Name', 'first_name', _profileData?['first_name']?.toString() ?? ''),
                         _buildEditableRow('Last Name', 'last_name', _profileData?['last_name']?.toString() ?? ''),
                         _buildDobRow(),
                         _buildComputedAgeRow(),
                         _buildToggleRow('Notifications', 'notifications_enabled', (_profileData?['notifications_enabled'] as bool?) ?? false),
 
-                        // Identity
+                        const SizedBox(height: 24),
+                        // Identity Section
+                        _buildSectionHeader('Identity'),
                         _buildMultiSelectRow(
                           'Pronouns',
                           'pronouns',
@@ -560,7 +564,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         ),
                         _buildVisibilitySwitch('Sexuality visible', 'sexuality_visible', (_profileData?['sexuality_visible'] as bool?) ?? true),
 
-                        // Preferences
+                        const SizedBox(height: 24),
+                        // Preferences Section
+                        _buildSectionHeader('Dating Preferences'),
                         _buildMultiSelectRow(
                           'Like to date',
                           'dating_preference',
@@ -582,12 +588,16 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                         ),
                         _buildVisibilitySwitch('Relationship type visible', 'relationship_type_visible', (_profileData?['relationship_type_visible'] as bool?) ?? true),
 
-                        // Location
+                        const SizedBox(height: 24),
+                        // Location Section
+                        _buildSectionHeader('Location'),
                         _buildEditableRow('Place you live', 'location', _profileData?['location']?.toString() ?? ''),
                         _buildEditableRow('Hometown', 'hometown', _profileData?['hometown']?.toString() ?? ''),
                         _buildVisibilitySwitch('Hometown visible', 'hometown_visible', (_profileData?['hometown_visible'] as bool?) ?? true),
 
-                        // Physical
+                        const SizedBox(height: 24),
+                        // Physical Section
+                        _buildSectionHeader('Physical'),
                         _buildEditableRow('Height (cm)', 'height_cm', (_profileData?['height_cm']?.toString() ?? ''), isNumber: true),
                         _buildMultiSelectRow(
                           'Ethnicity',
@@ -689,10 +699,30 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
   // Removed unused _buildInfoRow
 
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12, top: 8),
+      child: Text(
+        title,
+        style: GoogleFonts.inter(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFF6B46C1),
+        ),
+      ),
+    );
+  }
+
   Widget _buildEditableRow(String label, String fieldKey, String value,
       {bool isNumber = false, bool isList = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -708,7 +738,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   value.isEmpty ? 'Not set' : value,
                   style: const TextStyle(
@@ -720,7 +750,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           TextButton.icon(
             onPressed: _saving
                 ? null
@@ -730,6 +760,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             label: const Text('Edit'),
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFF6B46C1),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           ),
         ],
@@ -738,8 +769,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   }
 
   Widget _buildVisibilitySwitch(String label, String visibleKey, bool current) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: Row(
         children: [
           Expanded(
@@ -769,8 +806,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   Widget _buildSingleSelectRow(
       String label, String fieldKey, String currentValue, List<String> options) {
     final display = currentValue.isEmpty ? 'Not set' : currentValue;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -786,7 +829,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   display,
                   style: const TextStyle(
@@ -798,7 +841,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           TextButton.icon(
             onPressed: _saving
                 ? null
@@ -807,6 +850,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             label: const Text('Edit'),
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFF6B46C1),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           ),
         ],
@@ -864,8 +908,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   Widget _buildMultiSelectRow(String label, String fieldKey, List<String> values,
       List<String> options, {int? maxSelections}) {
     final display = values.isEmpty ? 'Not set' : values.join(', ');
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -881,7 +931,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   display,
                   style: const TextStyle(
@@ -893,7 +943,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           TextButton.icon(
             onPressed: _saving
                 ? null
@@ -908,6 +958,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             label: const Text('Edit'),
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFF6B46C1),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           ),
         ],
@@ -993,8 +1044,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     );
   }
   Widget _buildToggleRow(String label, String boolKey, bool current) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: Row(
         children: [
           Expanded(
@@ -1025,8 +1082,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     final dobIso = _profileData?['dob']?.toString();
     final dob = dobIso != null && dobIso.isNotEmpty ? DateTime.tryParse(dobIso) : null;
     final text = dob != null ? '${dob.year}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}' : 'Not set';
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1042,7 +1105,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   text,
                   style: const TextStyle(
@@ -1054,13 +1117,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           TextButton.icon(
             onPressed: _saving ? null : _pickDob,
             icon: const Icon(Icons.edit, size: 16),
             label: const Text('Edit'),
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFF6B46C1),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
           ),
         ],
@@ -1072,8 +1136,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     final dobIso = _profileData?['dob']?.toString();
     final dob = dobIso != null && dobIso.isNotEmpty ? DateTime.tryParse(dobIso) : null;
     final ageText = dob != null ? _calculateAge(dob).toString() : 'Not set';
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1089,7 +1159,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   ageText,
                   style: const TextStyle(
