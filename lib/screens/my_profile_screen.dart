@@ -19,6 +19,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   Map<String, dynamic>? _profileData;
   bool _loading = true;
   bool _saving = false;
+  bool _profilePictureRemoved = false;
 
   // Helpers
   int _calculateAge(DateTime dob) {
@@ -123,6 +124,9 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       if (profile != null) {
         setState(() {
           _profileData = profile;
+          // Check if user has explicitly removed their profile picture
+          final avatarUrl = profile['avatar_url']?.toString();
+          _profilePictureRemoved = avatarUrl != null && avatarUrl.isEmpty;
         });
       }
     } catch (e) {
@@ -140,17 +144,81 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   Future<void> _updateProfilePicture() async {
     if (_currentUser == null) return;
     
+    // Show image source selection
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Color(0xFF6B46C1)),
+                title: const Text('Choose from Gallery'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickAndUploadImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFF6B46C1)),
+                title: const Text('Take Photo'),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickAndUploadImage(ImageSource.camera);
+                },
+              ),
+              if (_getProfileImageUrl().isNotEmpty)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('Remove Profile Picture'),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await _removeProfilePicture();
+                  },
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAndUploadImage(ImageSource source) async {
+    if (_currentUser == null) return;
+    
     final picker = ImagePicker();
-    final result = await picker.pickImage(source: ImageSource.gallery);
+    final result = await picker.pickImage(
+      source: source,
+      imageQuality: 85, // Compress image for better performance
+      maxWidth: 1024,
+      maxHeight: 1024,
+    );
     
     if (result != null) {
       setState(() => _saving = true);
       try {
         final file = File(result.path);
+        
+        // Validate file size (max 5MB)
+        final fileSize = await file.length();
+        if (fileSize > 5 * 1024 * 1024) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Image too large. Please choose an image smaller than 5MB.')),
+            );
+          }
+          return;
+        }
+        
         final url = await _profileService.uploadProfileMedia(
           userId: _currentUser!.id,
           file: file,
         );
+        
         
         // Update the profile with new avatar URL
         await _profileService.upsertProfile(
@@ -158,18 +226,92 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
           avatarUrl: url,
         );
         
+        // Reset the removed flag since user has set a new profile picture
+        setState(() {
+          _profilePictureRemoved = false;
+        });
+        
         // Reload profile data
         await _loadProfileData();
         
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile picture updated!')),
+            const SnackBar(
+              content: Text('Profile picture updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error updating picture: $e')),
+            SnackBar(
+              content: Text('Error updating picture: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } finally {
+        setState(() => _saving = false);
+      }
+    }
+  }
+
+  Future<void> _removeProfilePicture() async {
+    if (_currentUser == null) return;
+    
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Profile Picture'),
+        content: const Text('Are you sure you want to remove your profile picture?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+    
+    if (confirmed == true) {
+      setState(() => _saving = true);
+      try {
+        // Clear the avatar URL
+        await _profileService.upsertProfile(
+          userId: _currentUser!.id,
+          avatarUrl: '',
+        );
+        
+        // Set flag to indicate profile picture was removed
+        setState(() {
+          _profilePictureRemoved = true;
+        });
+        
+        // Reload profile data
+        await _loadProfileData();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Profile picture removed successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error removing picture: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       } finally {
@@ -181,13 +323,25 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
 
   String _getProfileImageUrl() {
     if (_profileData == null) return '';
-    // Prefer first media in media_urls (onboarding uploads)
+    
+    // If user has explicitly removed their profile picture, don't show any image
+    if (_profilePictureRemoved) {
+      return '';
+    }
+    
+    // Check if user has set a profile picture
+    final avatarUrl = _profileData!['avatar_url']?.toString();
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      return avatarUrl;
+    }
+    
+    // Fallback to first media in media_urls (onboarding uploads) only if no profile picture removed
     final media = _profileData!['media_urls'] as List<dynamic>?;
     if (media != null && media.isNotEmpty) {
       return media.first.toString();
     }
-    // Fallback to avatar_url
-    return _profileData!['avatar_url'] ?? '';
+    
+    return '';
   }
 
   String _getFullName() {
@@ -224,13 +378,14 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
               child: Column(
                 children: [
                   // Profile Picture Section
-                  Stack(
+                  Center(
+                    child: Stack(
                     children: [
                       GestureDetector(
                         onTap: _updateProfilePicture,
                         child: Container(
-                          width: 120,
-                          height: 120,
+                            width: 140,
+                            height: 140,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: const Color(0xFF6B46C1).withOpacity(0.1),
@@ -238,24 +393,42 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                               color: const Color(0xFF6B46C1),
                               width: 3,
                             ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF6B46C1).withOpacity(0.2),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                           ),
-                          child: _getProfileImageUrl().isNotEmpty
-                              ? ClipOval(
-                                  child: Image.network(
-                                    _getProfileImageUrl(),
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Icon(
-                                        Icons.person,
-                                        size: 60,
-                                        color: Color(0xFF6B46C1),
-                                      );
-                                    },
-                                  ),
-                                )
+                            child: _getProfileImageUrl().isNotEmpty
+                                ? ClipOval(
+                                    child: Image.network(
+                                      _getProfileImageUrl(),
+                                      fit: BoxFit.cover,
+                                      cacheWidth: 140,
+                                      cacheHeight: 140,
+                                      loadingBuilder: (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return const Center(
+                                          child: CircularProgressIndicator(
+                                            color: Color(0xFF6B46C1),
+                                            strokeWidth: 2,
+                                          ),
+                                        );
+                                      },
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return const Icon(
+                                          Icons.person,
+                                          size: 70,
+                                          color: Color(0xFF6B46C1),
+                                        );
+                                      },
+                                    ),
+                                  )
                               : const Icon(
                                   Icons.person,
-                                  size: 60,
+                                    size: 70,
                                   color: Color(0xFF6B46C1),
                                 ),
                         ),
@@ -265,37 +438,59 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
             child: Container(
               decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.black.withOpacity(0.5),
+                                color: Colors.black.withOpacity(0.6),
                             ),
                             child: const Center(
-                              child: CircularProgressIndicator(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    CircularProgressIndicator(
                                 color: Colors.white,
-                                strokeWidth: 2,
-                              ),
+                                      strokeWidth: 3,
+                                    ),
+                                    SizedBox(height: 8),
+                                    Text(
+                                      'Updating...',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                             ),
                           ),
                         ),
                       Positioned(
-                        bottom: 0,
-                        right: 0,
+                          bottom: 8,
+                          right: 8,
                         child: GestureDetector(
                           onTap: _updateProfilePicture,
                           child: Container(
-                            width: 32,
-                            height: 32,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF6B46C1),
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF6B46C1),
                               shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.2),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                             ),
                             child: const Icon(
                               Icons.camera_alt,
                 color: Colors.white,
-                              size: 16,
+                                size: 18,
                             ),
               ),
             ),
           ),
         ],
+                    ),
       ),
                   
                   const SizedBox(height: 16),
@@ -919,7 +1114,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
       context: context,
       initialDate: initial,
       firstDate: DateTime(1900),
-      lastDate: DateTime(now.year - 18, now.month, now.day),
+      lastDate: DateTime(now.year - 10, now.month, now.day),
       helpText: 'Select your date of birth',
       builder: (context, child) {
         return Theme(

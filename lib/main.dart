@@ -30,6 +30,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'RizzexAI',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -148,7 +149,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
         _handleDeepLink(uri);
       }
     }, onError: (err) {
-      print('Deep link error: $err');
     });
 
     // Handle links when app is opened from a link
@@ -160,7 +160,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   void _handleDeepLink(Uri uri) async {
-    print('Handling deep link: $uri');
     // Check if this is a password reset link
     if (uri.pathSegments.contains('reset-password') ||
         uri.queryParameters.containsKey('access_token') ||
@@ -168,13 +167,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
       // Extract tokens from the URL
       final accessToken = uri.queryParameters['access_token'];
       final refreshToken = uri.queryParameters['refresh_token'];
-      print('accessToken: $accessToken');
-      print('refreshToken: $refreshToken');
       // Set the session with the tokens
       if (refreshToken != null) {
         await Supabase.instance.client.auth.recoverSession(refreshToken);
         final session = Supabase.instance.client.auth.currentSession;
-        print('Session after recover: $session');
         if (mounted && session != null) {
           setState(() {
             _currentSession = session;
@@ -185,10 +181,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
             (route) => false,
           );
         } else {
-          print('Session is still null after recover.');
         }
       } else {
-        print('No refresh token found in deep link.');
       }
     }
   }
