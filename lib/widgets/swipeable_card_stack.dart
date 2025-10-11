@@ -34,6 +34,7 @@ class _SwipeableCardStackState extends State<SwipeableCardStack>
   
   int _currentIndex = 0;
   bool _isAnimating = false;
+  Offset _panStartPosition = Offset.zero;
 
   @override
   void initState() {
@@ -165,13 +166,23 @@ class _SwipeableCardStackState extends State<SwipeableCardStack>
         if (_currentIndex < widget.users.length)
           Positioned.fill(
             child: GestureDetector(
+              onPanStart: (details) {
+                // Store the starting position to detect swipe direction
+                _panStartPosition = details.localPosition;
+              },
               onPanUpdate: (details) {
                 if (_isAnimating) return;
                 
                 final delta = details.delta.dx;
+                final currentPosition = details.localPosition;
                 
-                // Update card position based on pan - more sensitive
-                if (delta.abs() > 5) {
+                // Check if this is a horizontal swipe (for card like/dislike)
+                // vs vertical swipe (for photo navigation)
+                final horizontalDistance = (currentPosition.dx - _panStartPosition.dx).abs();
+                final verticalDistance = (currentPosition.dy - _panStartPosition.dy).abs();
+                
+                // Only respond to horizontal swipes for card actions
+                if (horizontalDistance > verticalDistance && horizontalDistance > 20) {
                   final progress = (delta / 150).clamp(-1.0, 1.0);
                   _controllers[_currentIndex].value = progress.abs();
                 }
@@ -181,21 +192,31 @@ class _SwipeableCardStackState extends State<SwipeableCardStack>
                 
                 final velocity = details.velocity.pixelsPerSecond.dx;
                 final delta = details.velocity.pixelsPerSecond.dy;
+                final currentPosition = details.localPosition;
                 
-                // More sensitive swipe detection for better UX
-                if (velocity.abs() > 300 || delta.abs() > 300) {
-                  if (velocity > 0) {
-                    // Right swipe = Like
-                    _swipeRight();
-                  } else if (velocity < 0) {
-                    // Left swipe = Dislike
-                    _swipeLeft();
-                  } else if (delta < -300) {
-                    // Up swipe = Super Like
-                    _swipeUp();
+                // Check if this was a horizontal swipe
+                final horizontalDistance = (currentPosition.dx - _panStartPosition.dx).abs();
+                final verticalDistance = (currentPosition.dy - _panStartPosition.dy).abs();
+                
+                // Only trigger card actions for horizontal swipes
+                if (horizontalDistance > verticalDistance && horizontalDistance > 50) {
+                  if (velocity.abs() > 300) {
+                    if (velocity > 0) {
+                      // Right swipe = Like
+                      _swipeRight();
+                    } else if (velocity < 0) {
+                      // Left swipe = Dislike
+                      _swipeLeft();
+                    }
+                  } else {
+                    // Reset card position if swipe wasn't strong enough
+                    _controllers[_currentIndex].reverse();
                   }
+                } else if (delta < -500) {
+                  // Up swipe = Super Like (regardless of horizontal/vertical)
+                  _swipeUp();
                 } else {
-                  // Reset card position if swipe wasn't strong enough
+                  // Reset card position if no clear action
                   _controllers[_currentIndex].reverse();
                 }
               },
@@ -205,19 +226,67 @@ class _SwipeableCardStackState extends State<SwipeableCardStack>
                   final user = widget.users[_currentIndex];
                   final progress = _controllers[_currentIndex].value;
                   
-                  return Transform.translate(
-                    offset: _animations[_currentIndex].value * progress,
-                    child: Transform.rotate(
-                      angle: _rotationAnimations[_currentIndex].value * progress,
-                      child: Transform.scale(
-                        scale: _scaleAnimations[_currentIndex].value,
-                        child: ProfileCard(
-                          user: user,
-                          currentUser: widget.currentUser,
-                          onTap: () => _showUserDetails(user),
+                  return Stack(
+                    children: [
+                      Transform.translate(
+                        offset: _animations[_currentIndex].value * progress,
+                        child: Transform.rotate(
+                          angle: _rotationAnimations[_currentIndex].value * progress,
+                          child: Transform.scale(
+                            scale: _scaleAnimations[_currentIndex].value,
+                            child: ProfileCard(
+                              user: user,
+                              currentUser: widget.currentUser,
+                              onTap: () => _showUserDetails(user),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                      
+                      // Like overlay (appears when swiping right)
+                      if (progress > 0.1)
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'LIKE',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      
+                      // Dislike overlay (appears when swiping left)
+                      if (progress < -0.1)
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.red.withOpacity(0.3),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'NOPE',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   );
                 },
               ),

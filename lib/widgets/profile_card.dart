@@ -111,10 +111,11 @@ class _ProfileCardState extends State<ProfileCard>
   Widget _buildPhotoSection(List<String> photos) {
     return Stack(
       children: [
-        // Photo carousel - full screen
+        // Photo carousel - full screen (vertical swipe only)
         PageView.builder(
           controller: _pageController,
           onPageChanged: _onPhotoChanged,
+          scrollDirection: Axis.vertical, // Change to vertical scrolling
           itemCount: photos.length,
           itemBuilder: (context, index) {
             return CachedNetworkImage(
@@ -272,37 +273,6 @@ class _ProfileCardState extends State<ProfileCard>
                 ],
               ],
             ),
-            
-            const SizedBox(height: 8),
-            
-            // Key details (Hinge style - clean and minimal)
-            if (widget.user.jobTitle != null || widget.user.educationLevel != null) ...[
-              Text(
-                [
-                  if (widget.user.jobTitle != null) widget.user.jobTitle!,
-                  if (widget.user.educationLevel != null) widget.user.educationLevel!,
-                ].join(' • '),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0.3,
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-            
-            // Location
-            if (widget.user.location != 'Location not specified')
-              Text(
-                widget.user.location,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  letterSpacing: 0.3,
-                ),
-              ),
             
             const SizedBox(height: 12),
             
