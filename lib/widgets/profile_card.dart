@@ -99,10 +99,6 @@ class _ProfileCardState extends State<ProfileCard>
                   
                   // Content section (includes gradient overlay)
                   _buildContentSection(commons),
-                  
-                  // Photo indicators
-                  if (hasPhotos && photos.length > 1)
-                    _buildPhotoIndicators(photos.length),
                 ],
               ),
             ),
@@ -113,37 +109,61 @@ class _ProfileCardState extends State<ProfileCard>
   }
 
   Widget _buildPhotoSection(List<String> photos) {
-    return SizedBox(
-      // fill available area so the image covers the card fully
-      width: double.infinity,
-      height: double.infinity,
-      child: PageView.builder(
-        controller: _pageController,
-        onPageChanged: _onPhotoChanged,
-        itemCount: photos.length,
-        itemBuilder: (context, index) {
-          return CachedNetworkImage(
-            imageUrl: photos[index],
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Container(
-              color: Colors.grey[300],
-              child: const Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF6B46C1),
+    return Stack(
+      children: [
+        // Photo carousel - full screen
+        PageView.builder(
+          controller: _pageController,
+          onPageChanged: _onPhotoChanged,
+          itemCount: photos.length,
+          itemBuilder: (context, index) {
+            return CachedNetworkImage(
+              imageUrl: photos[index],
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              placeholder: (context, url) => Container(
+                color: Colors.grey[300],
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                  ),
                 ),
               ),
-            ),
-            errorWidget: (context, url, error) => Container(
-              color: Colors.grey[300],
-              child: const Icon(
-                Icons.person,
-                size: 100,
-                color: Colors.grey,
+              errorWidget: (context, url, error) => Container(
+                color: Colors.grey[300],
+                child: const Icon(
+                  Icons.person,
+                  size: 100,
+                  color: Colors.grey,
+                ),
               ),
+            );
+          },
+        ),
+        
+        // Photo indicators (Hinge style - small dots at top)
+        if (photos.length > 1)
+          Positioned(
+            top: 50,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(photos.length, (index) {
+                return Container(
+                  width: 6,
+                  height: 6,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: index == _currentPhotoIndex ? Colors.white : Colors.white.withOpacity(0.5),
+                  ),
+                );
+              }),
             ),
-          );
-        },
-      ),
+          ),
+      ],
     );
   }
 
@@ -203,15 +223,15 @@ class _ProfileCardState extends State<ProfileCard>
       left: 0,
       right: 0,
       child: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
               Colors.transparent,
-              Colors.black.withOpacity(0.3),
-              Colors.black.withOpacity(0.8),
+              Colors.black.withOpacity(0.1),
+              Colors.black.withOpacity(0.7),
             ],
           ),
         ),
@@ -219,68 +239,90 @@ class _ProfileCardState extends State<ProfileCard>
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // First line: Name and Age
+            // Name and Age (Hinge style)
             Row(
               children: [
                 Text(
                   widget.user.displayName,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(
-                        offset: Offset(0, 1),
-                        blurRadius: 3,
-                        color: Colors.black54,
-                      ),
-                    ],
+                    fontSize: 28,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  widget.user.age?.toString() ?? 'N/A',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    shadows: [
-                      Shadow(
-                        offset: Offset(0, 1),
-                        blurRadius: 3,
-                        color: Colors.black54,
-                      ),
-                    ],
+                if (widget.user.age != null) ...[
+                  const Text(
+                    ', ',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
+                  Text(
+                    '${widget.user.age}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
               ],
             ),
             
+            const SizedBox(height: 8),
+            
+            // Key details (Hinge style - clean and minimal)
+            if (widget.user.jobTitle != null || widget.user.educationLevel != null) ...[
+              Text(
+                [
+                  if (widget.user.jobTitle != null) widget.user.jobTitle!,
+                  if (widget.user.educationLevel != null) widget.user.educationLevel!,
+                ].join(' • '),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.3,
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            
+            // Location
+            if (widget.user.location != 'Location not specified')
+              Text(
+                widget.user.location,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            
             const SizedBox(height: 12),
             
-            // Second line: Common interests
+            // Common interests (Hinge style)
             if (commons.isNotEmpty) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  border: Border.all(color: Colors.white.withOpacity(0.2)),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.favorite, size: 16, color: Colors.white),
-                    const SizedBox(width: 6),
-                    Text(
-                      'You both ${commons.take(2).join(' & ')}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'You both ${commons.take(2).join(' & ')}',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.2,
+                  ),
                 ),
               ),
             ],
@@ -290,26 +332,29 @@ class _ProfileCardState extends State<ProfileCard>
     );
   }
 
-
-
-  Widget _buildPhotoIndicators(int photoCount) {
-    return Positioned(
-      top: 20,
-      right: 20,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          '${_currentPhotoIndex + 1}/$photoCount',
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+  Widget _buildDetailRow(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 14,
+            color: Colors.black87,
           ),
-        ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }
