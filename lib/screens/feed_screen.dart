@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../widgets/swipeable_card_stack.dart';
-import '../widgets/feed_action_buttons.dart';
 import 'dart:developer' as developer;
 
 class FeedScreen extends StatefulWidget {
@@ -15,6 +14,7 @@ class FeedScreen extends StatefulWidget {
 class _FeedScreenState extends State<FeedScreen> {
   final FeedService _feedService = FeedService();
   List<User> _users = [];
+  User? _currentUser;
   bool _isLoading = true;
   bool _isRefreshing = false;
   String? _error;
@@ -22,7 +22,21 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   void initState() {
     super.initState();
+    _loadCurrentUser();
     _loadUsers();
+  }
+
+  Future<void> _loadCurrentUser() async {
+    try {
+      final profile = await _feedService.getCurrentUserProfile();
+      if (mounted) {
+        setState(() {
+          _currentUser = profile;
+        });
+      }
+    } catch (e) {
+      developer.log('Error loading current user profile: $e');
+    }
   }
 
   Future<void> _loadUsers() async {
@@ -108,17 +122,6 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
-  void _onPass() {
-    // This will be handled by the swipe gesture
-  }
-
-  void _onLike() {
-    // This will be handled by the swipe gesture
-  }
-
-  void _onSuperLike() {
-    // This will be handled by the swipe gesture
-  }
 
   int _getCurrentCardIndex() {
     // This would need to be tracked by the SwipeableCardStack
@@ -129,66 +132,75 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // Main content - now full screen
+          _buildBody(),
+          
+          // Floating header overlay
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.7),
+                      Colors.transparent,
+                    ],
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.local_fire_department,
-                    color: Color(0xFF6B46C1),
-                    size: 28,
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Discover',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF6B46C1),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.local_fire_department,
+                      color: Colors.white,
+                      size: 28,
                     ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: _refreshFeed,
-                    icon: _isRefreshing
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Color(0xFF6B46C1),
-                            ),
-                          )
-                        : const Icon(
-                            Icons.refresh,
-                            color: Color(0xFF6B46C1),
-                          ),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Discover',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: IconButton(
+                        onPressed: _refreshFeed,
+                        icon: _isRefreshing
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(
+                                Icons.refresh,
+                                color: Colors.white,
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            
-            // Main content
-            Expanded(
-              child: _buildBody(),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -312,30 +324,16 @@ class _FeedScreenState extends State<FeedScreen> {
       );
     }
 
-    return Column(
-      children: [
-        // Card stack
-        Expanded(
-          child: SwipeableCardStack(
-            users: _users,
-            onSwipe: _onSwipe,
-            onEmpty: () {
-              setState(() {
-                _users.clear();
-              });
-              _refreshFeed();
-            },
-          ),
-        ),
-        
-        // Action buttons
-        FeedActionButtonsWithLabels(
-          onPass: _onPass,
-          onLike: _onLike,
-          onSuperLike: _onSuperLike,
-          isLoading: _isRefreshing,
-        ),
-      ],
+    return SwipeableCardStack(
+      users: _users,
+      currentUser: _currentUser,
+      onSwipe: _onSwipe,
+      onEmpty: () {
+        setState(() {
+          _users.clear();
+        });
+        _refreshFeed();
+      },
     );
   }
 }

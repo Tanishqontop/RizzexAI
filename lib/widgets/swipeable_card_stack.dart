@@ -5,6 +5,7 @@ import '../models/user.dart';
 
 class SwipeableCardStack extends StatefulWidget {
   final List<User> users;
+  final User? currentUser;
   final Function(User user, SwipeDirection direction)? onSwipe;
   final VoidCallback? onEmpty;
   final Widget? emptyWidget;
@@ -12,6 +13,7 @@ class SwipeableCardStack extends StatefulWidget {
   const SwipeableCardStack({
     super.key,
     required this.users,
+    this.currentUser,
     this.onSwipe,
     this.onEmpty,
     this.emptyWidget,
@@ -130,7 +132,7 @@ class _SwipeableCardStackState extends State<SwipeableCardStack>
 
     return Stack(
       children: [
-        // Background cards (stacked behind)
+        // Background cards (stacked behind) - now full-screen
         ...List.generate(
           math.min(3, widget.users.length - _currentIndex),
           (index) {
@@ -149,6 +151,7 @@ class _SwipeableCardStackState extends State<SwipeableCardStack>
                     opacity: isTopCard ? 1.0 : 0.8 - (index * 0.2),
                     child: ProfileCard(
                       user: user,
+                      currentUser: widget.currentUser,
                       onTap: isTopCard ? () => _showUserDetails(user) : null,
                     ),
                   ),
@@ -158,7 +161,7 @@ class _SwipeableCardStackState extends State<SwipeableCardStack>
           },
         ),
         
-        // Top card with swipe gestures
+        // Top card with enhanced swipe gestures
         if (_currentIndex < widget.users.length)
           Positioned.fill(
             child: GestureDetector(
@@ -167,9 +170,9 @@ class _SwipeableCardStackState extends State<SwipeableCardStack>
                 
                 final delta = details.delta.dx;
                 
-                // Update card position based on pan
-                if (delta.abs() > 10) {
-                  final progress = (delta / 200).clamp(-1.0, 1.0);
+                // Update card position based on pan - more sensitive
+                if (delta.abs() > 5) {
+                  final progress = (delta / 150).clamp(-1.0, 1.0);
                   _controllers[_currentIndex].value = progress.abs();
                 }
               },
@@ -179,13 +182,16 @@ class _SwipeableCardStackState extends State<SwipeableCardStack>
                 final velocity = details.velocity.pixelsPerSecond.dx;
                 final delta = details.velocity.pixelsPerSecond.dy;
                 
-                // Determine swipe direction based on velocity and distance
-                if (velocity.abs() > 500 || delta.abs() > 500) {
+                // More sensitive swipe detection for better UX
+                if (velocity.abs() > 300 || delta.abs() > 300) {
                   if (velocity > 0) {
+                    // Right swipe = Like
                     _swipeRight();
                   } else if (velocity < 0) {
+                    // Left swipe = Dislike
                     _swipeLeft();
-                  } else if (delta < -500) {
+                  } else if (delta < -300) {
+                    // Up swipe = Super Like
                     _swipeUp();
                   }
                 } else {
@@ -207,6 +213,7 @@ class _SwipeableCardStackState extends State<SwipeableCardStack>
                         scale: _scaleAnimations[_currentIndex].value,
                         child: ProfileCard(
                           user: user,
+                          currentUser: widget.currentUser,
                           onTap: () => _showUserDetails(user),
                         ),
                       ),

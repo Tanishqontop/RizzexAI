@@ -106,8 +106,8 @@ class User {
       zodiacSign: map['zodiac_sign'] as String?,
       bio: map['bio'] as String?,
       avatarUrl: map['avatar_url'] as String?,
-      profilePhotos: map['profile_photos'] != null 
-          ? List<String>.from(map['profile_photos'] as List) 
+      profilePhotos: (map['profile_photos'] ?? map['media_urls']) != null
+          ? List<String>.from((map['profile_photos'] ?? map['media_urls']) as List)
           : null,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
