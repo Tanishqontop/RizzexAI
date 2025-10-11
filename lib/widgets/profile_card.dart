@@ -219,7 +219,46 @@ class _ProfileCardState extends State<ProfileCard>
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Commons row - more prominent
+            // First line: Name and Age
+            Row(
+              children: [
+                Text(
+                  widget.user.displayName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(0, 1),
+                        blurRadius: 3,
+                        color: Colors.black54,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  widget.user.age?.toString() ?? 'N/A',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    shadows: [
+                      Shadow(
+                        offset: Offset(0, 1),
+                        blurRadius: 3,
+                        color: Colors.black54,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 12),
+            
+            // Second line: Common interests
             if (commons.isNotEmpty) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -244,146 +283,13 @@ class _ProfileCardState extends State<ProfileCard>
                   ],
                 ),
               ),
-              const SizedBox(height: 16),
             ],
-            
-            // Name and age - more prominent
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.user.displayName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(0, 1),
-                          blurRadius: 3,
-                          color: Colors.black54,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (widget.user.age != null)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withOpacity(0.3)),
-                    ),
-                    child: Text(
-                      '${widget.user.age}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            
-            const SizedBox(height: 12),
-            
-            // Location
-            Row(
-              children: [
-                const Icon(
-                  Icons.location_on,
-                  color: Colors.white70,
-                  size: 18,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  widget.user.location,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Bio
-            if (widget.user.bio != null && widget.user.bio!.isNotEmpty)
-              Text(
-                widget.user.bio!,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  height: 1.4,
-                  fontWeight: FontWeight.w400,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            
-            const SizedBox(height: 16),
-            
-            // Additional info chips
-            _buildInfoChips(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoChips() {
-    List<Widget> chips = [];
-    
-    if (widget.user.heightFeet != null) {
-      chips.add(_buildInfoChip(widget.user.height));
-    }
-    
-    if (widget.user.zodiacSign != null) {
-      chips.add(_buildInfoChip(widget.user.zodiacSign!));
-    }
-    
-    if (widget.user.educationLevel != null) {
-      chips.add(_buildInfoChip(widget.user.educationLevel!));
-    }
-    
-    if (widget.user.jobTitle != null) {
-      chips.add(_buildInfoChip(widget.user.jobTitle!));
-    }
-
-    if (chips.isEmpty) return const SizedBox.shrink();
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 4,
-      children: chips,
-    );
-  }
-
-  Widget _buildInfoChip(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
 
 
   Widget _buildPhotoIndicators(int photoCount) {
