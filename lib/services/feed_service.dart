@@ -68,6 +68,12 @@ class FeedService {
         // Log the first profile to see what fields are available
         if (response.isNotEmpty) {
           developer.log('First profile structure: ${response.first}');
+          developer.log('Available fields: ${response.first.keys.toList()}');
+          developer.log('Age field specifically: ${response.first['age']}');
+          developer.log('Date of birth field: ${response.first['date_of_birth']}');
+          developer.log('DOB field: ${response.first['dob']}');
+          developer.log('First name: ${response.first['first_name']}');
+          developer.log('Last name: ${response.first['last_name']}');
         }
         
         final users = <app_user.User>[];

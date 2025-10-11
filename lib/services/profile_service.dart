@@ -127,7 +127,16 @@ class ProfileService {
       if (avatarUrl != null) updateData['avatar_url'] = avatarUrl;
       if (firstName != null) updateData['first_name'] = firstName;
       if (lastName != null) updateData['last_name'] = lastName;
-      if (dob != null) updateData['dob'] = dob.toIso8601String();
+      if (dob != null) {
+        updateData['date_of_birth'] = dob.toIso8601String();
+        // Calculate age from date of birth
+        final now = DateTime.now();
+        int age = now.year - dob.year;
+        if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
+          age--;
+        }
+        updateData['age'] = age;
+      }
       if (notificationsEnabled != null)
         updateData['notifications_enabled'] = notificationsEnabled;
       if (location != null) updateData['location'] = location;

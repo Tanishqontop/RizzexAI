@@ -72,12 +72,34 @@ class User {
   });
 
   factory User.fromMap(Map<String, dynamic> map) {
+    print('User.fromMap - Raw age value: ${map['age']} (type: ${map['age'].runtimeType})');
+    print('User.fromMap - Date of birth: ${map['date_of_birth']}');
+    
+    // Calculate age from date_of_birth or dob if age is null
+    int? age = map['age'] as int?;
+    if (age == null) {
+      String? dobString = map['date_of_birth'] as String? ?? map['dob'] as String?;
+      if (dobString != null) {
+        try {
+          final dob = DateTime.parse(dobString);
+          final now = DateTime.now();
+          age = now.year - dob.year;
+          if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
+            age--;
+          }
+          print('User.fromMap - Calculated age from DOB: $age');
+        } catch (e) {
+          print('User.fromMap - Error parsing date of birth: $e');
+        }
+      }
+    }
+    
     return User(
       id: map['id'] as String,
       username: map['username'] as String?,
       firstName: map['first_name'] as String?,
       lastName: map['last_name'] as String?,
-      age: map['age'] as int?,
+      age: age,
       gender: map['gender'] as String?,
       sexuality: map['sexuality'] as String?,
       lookingFor: map['looking_for'] as String?,
