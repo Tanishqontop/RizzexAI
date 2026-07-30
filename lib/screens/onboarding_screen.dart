@@ -1,5 +1,5 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'auth/sign_in_screen.dart';
 import 'auth/sign_up_screen.dart';
 
@@ -52,7 +52,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       children: [
                         Text(
                           'Rizzex',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.geist(
                             fontSize: 48,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -62,7 +62,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         const SizedBox(height: 8),
                         Text(
                           'Level up your dating game.',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.geist(
                             fontSize: 18,
                             fontWeight: FontWeight.w400,
                             color: Colors.white.withOpacity(0.9),
@@ -82,7 +82,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       // Legal text
                       Text(
                         'By tapping Sign in or Create account, you agree to our Terms of Service. Learn how we process your data in our Privacy Policy and Cookies Policy.',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.geist(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.8),
                           height: 1.4,
@@ -115,7 +115,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           ),
                           child: Text(
                             'Create account',
-                            style: GoogleFonts.inter(
+                            style: AppFonts.geist(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                             ),
@@ -137,7 +137,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         },
                         child: Text(
                           'Sign in',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.geist(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,

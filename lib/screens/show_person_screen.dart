@@ -1,5 +1,5 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'pick_media_screen.dart';
 
 class ShowPersonScreen extends StatefulWidget {
@@ -25,9 +25,9 @@ class _ShowPersonScreenState extends State<ShowPersonScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'Show off the person behind the profile with pics, videos.',
+                      'Show off the person behind the profile with photos.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.playfairDisplay(
+                      style: AppFonts.display(
                         fontSize: 44,
                         height: 1.1,
                         fontWeight: FontWeight.w700,

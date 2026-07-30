@@ -243,34 +243,21 @@ class _ProfileCardState extends State<ProfileCard>
             // Name and Age (Hinge style)
             Row(
               children: [
-                Text(
-                  widget.user.displayName,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                if (widget.user.age != null) ...[
-                  const Text(
-                    ', ',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    '${widget.user.age}',
+                Flexible(
+                  child: Text(
+                    widget.user.age != null
+                        ? '${widget.user.displayName}, ${widget.user.age}'
+                        : widget.user.displayName,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 0.5,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
-                ],
+                ),
               ],
             ),
             
@@ -293,6 +280,8 @@ class _ProfileCardState extends State<ProfileCard>
                     fontWeight: FontWeight.w500,
                     letterSpacing: 0.2,
                   ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],

@@ -1,6 +1,6 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../services/bio_upgrader_service.dart';
 
 class BioUpgraderScreen extends StatefulWidget {
@@ -66,7 +66,7 @@ class _BioUpgraderScreenState extends State<BioUpgraderScreen> {
       appBar: AppBar(
         title: Text(
           "Bio Upgrader",
-          style: GoogleFonts.playfairDisplay(
+          style: AppFonts.display(
             color: const Color.fromARGB(255, 0, 0, 0),
             fontWeight: FontWeight.bold,
           ),

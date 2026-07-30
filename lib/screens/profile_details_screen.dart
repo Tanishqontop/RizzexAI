@@ -1,5 +1,5 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'location_screen.dart';
 
 class ProfileDetailsScreen extends StatelessWidget {
@@ -23,7 +23,7 @@ class ProfileDetailsScreen extends StatelessWidget {
                     child: Text(
                       "The more you share,\nthe better your\nmatches will be.",
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.playfairDisplay(
+                      style: AppFonts.display(
                         fontSize: 36,
                         height: 1.2,
                         fontWeight: FontWeight.w700,
@@ -94,7 +94,7 @@ class ProfileDetailsScreen extends StatelessWidget {
                   ),
                   child: Text(
                     'Add more details',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.geist(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),

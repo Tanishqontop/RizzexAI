@@ -1,5 +1,5 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Import Supabase
 import '../services/profile_service.dart'; // NEW: Import ProfileService
 import 'notification_prompt_screen.dart';
@@ -95,7 +95,7 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text("You're $_calculatedAge",
-            style: GoogleFonts.playfairDisplay(fontWeight: FontWeight.w700)),
+            style: AppFonts.display(fontWeight: FontWeight.w700)),
         content: Text(
             'Born ${_selectedDate!.day} ${_getMonthName(_selectedDate!.month)} ${_selectedDate!.year}'),
         actions: [
@@ -153,7 +153,7 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
                       children: [
                         Text(
                           "What's your date of birth?",
-                          style: GoogleFonts.playfairDisplay(
+                          style: AppFonts.display(
                               fontSize: 34, fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 24),
@@ -172,7 +172,7 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text('Select your date of birth',
-                                      style: GoogleFonts.inter(
+                                      style: AppFonts.geist(
                                           fontSize: 16,
                                           color: Colors.grey[600])),
                                   Icon(Icons.calendar_today,
@@ -199,12 +199,12 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
                                   children: [
                                     Text(
                                         '${_selectedDate!.day} ${_getMonthName(_selectedDate!.month)} ${_selectedDate!.year}',
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.geist(
                                             fontSize: 18,
                                             fontWeight: FontWeight.w600,
                                             color: const Color(0xFF6B46C1))),
                                     Text('Age: $_calculatedAge years',
-                                        style: GoogleFonts.inter(
+                                        style: AppFonts.geist(
                                             fontSize: 14,
                                             color: Colors.grey[600])),
                                   ],
@@ -220,7 +220,7 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
                         const SizedBox(height: 24),
                         Text(
                           'We use this to calculate the age on your profile.',
-                          style: GoogleFonts.inter(
+                          style: AppFonts.geist(
                               fontSize: 14, color: Colors.grey[600]),
                         ),
                       ],

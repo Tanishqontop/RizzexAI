@@ -72,24 +72,59 @@ class User {
   });
 
   factory User.fromMap(Map<String, dynamic> map) {
-    // Calculate age from date_of_birth or dob if age is null
     int? age = map['age'] as int?;
     if (age == null) {
-      String? dobString = map['date_of_birth'] as String? ?? map['dob'] as String?;
-      if (dobString != null) {
+      String? dobString;
+      final dobRaw = map['date_of_birth'] ?? map['dob'];
+      if (dobRaw is String) {
+        dobString = dobRaw;
+      } else if (dobRaw != null) {
+        dobString = dobRaw.toString();
+      }
+      if (dobString != null && dobString.isNotEmpty) {
         try {
           final dob = DateTime.parse(dobString);
           final now = DateTime.now();
           age = now.year - dob.year;
-          if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
+          if (now.month < dob.month ||
+              (now.month == dob.month && now.day < dob.day)) {
             age--;
           }
-        } catch (e) {
-          // Age calculation failed, keep as null
-        }
+        } catch (_) {}
       }
     }
-    
+
+    int? heightFeet = map['height_feet'] as int?;
+    int? heightInches = map['height_inches'] as int?;
+    if (heightFeet == null && map['height_cm'] != null) {
+      final totalInches = ((map['height_cm'] as num) / 2.54).round();
+      heightFeet = totalInches ~/ 12;
+      heightInches = totalInches % 12;
+    }
+
+    String? religiousBelief = map['religious_belief'] as String?;
+    if (religiousBelief == null && map['religious_beliefs'] != null) {
+      final beliefs = map['religious_beliefs'];
+      if (beliefs is List && beliefs.isNotEmpty) {
+        religiousBelief = beliefs.first.toString();
+      } else if (beliefs is String) {
+        religiousBelief = beliefs;
+      }
+    }
+
+    final photosRaw = map['profile_photos'] ?? map['media_urls'];
+    List<String>? profilePhotos;
+    if (photosRaw is List) {
+      profilePhotos = photosRaw.map((e) => e.toString()).toList();
+    }
+
+    DateTime parseDate(dynamic value) {
+      if (value is String) {
+        return DateTime.parse(value);
+      }
+      return DateTime.now();
+    }
+
     return User(
       id: map['id'] as String,
       username: map['username'] as String?,
@@ -99,77 +134,60 @@ class User {
       gender: map['gender'] as String?,
       sexuality: map['sexuality'] as String?,
       lookingFor: map['looking_for'] as String?,
-      locationCity: map['location_city'] as String?,
+      locationCity:
+          map['location_city'] as String? ?? map['location'] as String?,
       locationState: map['location_state'] as String?,
       locationCountry: map['location_country'] as String?,
-      latitude: map['latitude'] as double?,
-      longitude: map['longitude'] as double?,
-      heightFeet: map['height_feet'] as int?,
-      heightInches: map['height_inches'] as int?,
-      ethnicity: map['ethnicity'] != null 
-          ? List<String>.from(map['ethnicity'] as List) 
+      latitude: (map['latitude'] as num?)?.toDouble(),
+      longitude: (map['longitude'] as num?)?.toDouble(),
+      heightFeet: heightFeet,
+      heightInches: heightInches,
+      ethnicity: map['ethnicity'] != null
+          ? List<String>.from(map['ethnicity'] as List)
           : null,
-      religiousBelief: map['religious_belief'] as String?,
-      politicalBelief: map['political_belief'] as String?,
-      educationLevel: map['education_level'] as String?,
+      religiousBelief: religiousBelief,
+      politicalBelief:
+          map['political_belief'] as String? ?? map['political_beliefs'] as String?,
+      educationLevel:
+          map['education_level'] as String? ?? map['education'] as String?,
       schoolName: map['school_name'] as String?,
-      workCompany: map['work_company'] as String?,
+      workCompany: map['work_company'] as String? ?? map['work'] as String?,
       jobTitle: map['job_title'] as String?,
-      drinking: map['drinking'] as String?,
-      smokingTobacco: map['smoking_tobacco'] as String?,
-      smokingWeed: map['smoking_weed'] as String?,
-      drugUse: map['drug_use'] as String?,
-      wantsChildren: map['wants_children'] as String?,
+      drinking: map['drinking'] as String? ?? map['drinking_status'] as String?,
+      smokingTobacco:
+          map['smoking_tobacco'] as String? ?? map['smoking_status'] as String?,
+      smokingWeed:
+          map['smoking_weed'] as String? ?? map['weed_status'] as String?,
+      drugUse: map['drug_use'] as String? ?? map['drug_status'] as String?,
+      wantsChildren:
+          map['wants_children'] as String? ?? map['children_status'] as String?,
       hasChildren: map['has_children'] as String?,
       zodiacSign: map['zodiac_sign'] as String?,
       bio: map['bio'] as String?,
       avatarUrl: map['avatar_url'] as String?,
-      profilePhotos: (map['profile_photos'] ?? map['media_urls']) != null
-          ? List<String>.from((map['profile_photos'] ?? map['media_urls']) as List)
-          : null,
-      createdAt: DateTime.parse(map['created_at'] as String),
-      updatedAt: DateTime.parse(map['updated_at'] as String),
+      profilePhotos: profilePhotos,
+      createdAt: parseDate(map['created_at']),
+      updatedAt: parseDate(map['updated_at']),
     );
   }
 
-  /// Factory constructor for basic profiles (when extended fields are not available)
+  /// Fallback mapping that still reads available profile fields.
   factory User.fromBasicMap(Map<String, dynamic> map) {
-    return User(
-      id: map['id'] as String,
-      username: map['username'] as String?,
-      firstName: null,
-      lastName: null,
-      age: null,
-      gender: null,
-      sexuality: null,
-      lookingFor: null,
-      locationCity: null,
-      locationState: null,
-      locationCountry: null,
-      latitude: null,
-      longitude: null,
-      heightFeet: null,
-      heightInches: null,
-      ethnicity: null,
-      religiousBelief: null,
-      politicalBelief: null,
-      educationLevel: null,
-      schoolName: null,
-      workCompany: null,
-      jobTitle: null,
-      drinking: null,
-      smokingTobacco: null,
-      smokingWeed: null,
-      drugUse: null,
-      wantsChildren: null,
-      hasChildren: null,
-      zodiacSign: null,
-      bio: null,
-      avatarUrl: null,
-      profilePhotos: null,
-      createdAt: DateTime.parse(map['created_at'] as String),
-      updatedAt: DateTime.parse(map['updated_at'] as String),
-    );
+    try {
+      return User.fromMap(map);
+    } catch (_) {
+      return User(
+        id: map['id'] as String,
+        username: map['username'] as String?,
+        firstName: map['first_name'] as String?,
+        lastName: map['last_name'] as String?,
+        profilePhotos: map['media_urls'] is List
+            ? List<String>.from(map['media_urls'] as List)
+            : null,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
   }
 
   Map<String, dynamic> toMap() {
@@ -243,9 +261,22 @@ class User {
   }
 
   List<String> get allPhotos {
-    List<String> photos = [];
-    if (avatarUrl != null) photos.add(avatarUrl!);
-    if (profilePhotos != null) photos.addAll(profilePhotos!);
+    final photos = <String>[];
+    if (avatarUrl != null && !_isProfileVideoUrl(avatarUrl!)) {
+      photos.add(avatarUrl!);
+    }
+    if (profilePhotos != null) {
+      photos.addAll(
+        profilePhotos!.where((url) => !_isProfileVideoUrl(url)),
+      );
+    }
     return photos;
   }
+}
+
+bool _isProfileVideoUrl(String url) {
+  const videoExtensions = {'mp4', 'mov', 'webm', 'avi', 'mkv', 'm4v'};
+  final path = Uri.tryParse(url)?.path ?? url;
+  final ext = path.split('.').last.toLowerCase();
+  return videoExtensions.contains(ext);
 }

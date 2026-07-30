@@ -1,5 +1,5 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/profile_service.dart';
 import 'pronouns_screen.dart';
@@ -106,7 +106,7 @@ class _LocationScreenState extends State<LocationScreen> {
                           children: [
                             Text(
                               'Where do you live?',
-                              style: GoogleFonts.playfairDisplay(
+                              style: AppFonts.display(
                                 fontSize: 34,
                                 height: 1.1,
                                 fontWeight: FontWeight.w700,
@@ -165,7 +165,7 @@ class _LocationScreenState extends State<LocationScreen> {
                     decoration: InputDecoration(
                       hintText: 'District, State, Country',
                       hintStyle:
-                          GoogleFonts.inter(color: const Color(0xFF6D6A6D)),
+                          AppFonts.geist(color: const Color(0xFF6D6A6D)),
                       enabledBorder: const UnderlineInputBorder(
                         borderSide: BorderSide(color: Color(0xFF1F1F1F)),
                       ),

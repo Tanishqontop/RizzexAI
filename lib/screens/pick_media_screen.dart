@@ -1,6 +1,6 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/profile_service.dart';
@@ -97,8 +97,8 @@ class _PickMediaScreenState extends State<PickMediaScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Pick your photos and videos',
-                        style: GoogleFonts.playfairDisplay(
+                        'Pick your photos',
+                        style: AppFonts.display(
                           fontSize: 34,
                           height: 1.1,
                           fontWeight: FontWeight.w700,
@@ -161,7 +161,7 @@ class _PickMediaScreenState extends State<PickMediaScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text('Tap to edit; drag to reorder\n6 required',
-                    style: GoogleFonts.inter(color: const Color(0xFF9A979A))),
+                    style: AppFonts.geist(color: const Color(0xFF9A979A))),
                 const SizedBox(height: 16),
                 _showTips
                     ? _TipsPanel(
@@ -236,7 +236,7 @@ class _ShowTips extends StatelessWidget {
           Text(
             'Not sure which photos to use?\nSee what works based on research.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(fontSize: 16),
+            style: AppFonts.geist(fontSize: 16),
           ),
           const SizedBox(height: 8),
           TextButton(
@@ -267,7 +267,7 @@ class _TipsPanel extends StatelessWidget {
           Text(
             'A variety of poses and settings work best.',
             textAlign: TextAlign.center,
-            style: GoogleFonts.inter(fontSize: 16),
+            style: AppFonts.geist(fontSize: 16),
           ),
           const SizedBox(height: 8),
           TextButton(

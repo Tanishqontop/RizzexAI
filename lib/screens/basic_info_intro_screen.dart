@@ -1,5 +1,5 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'name_entry_screen.dart';
 
 class BasicInfoIntroScreen extends StatelessWidget {
@@ -21,7 +21,7 @@ class BasicInfoIntroScreen extends StatelessWidget {
                     child: Text(
                       "You're one of a kind.\nYour profile should be, too.",
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.playfairDisplay(
+                      style: AppFonts.display(
                         fontSize: 36,
                         height: 1.2,
                         fontWeight: FontWeight.w700,
@@ -78,7 +78,7 @@ class BasicInfoIntroScreen extends StatelessWidget {
                   ),
                   child: Text(
                     'Enter basic info',
-                    style: GoogleFonts.inter(
+                    style: AppFonts.geist(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),

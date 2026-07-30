@@ -1,5 +1,5 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Import Supabase
 import '../services/profile_service.dart'; // NEW: Import ProfileService
 import 'dating_intention_screen.dart';
@@ -90,7 +90,7 @@ class _LikeToDateScreenState extends State<LikeToDateScreen> {
                         children: [
                           Text(
                             'Who would you like to date?',
-                            style: GoogleFonts.playfairDisplay(
+                            style: AppFonts.display(
                               fontSize: 34,
                               height: 1.1,
                               fontWeight: FontWeight.w700,
@@ -100,7 +100,7 @@ class _LikeToDateScreenState extends State<LikeToDateScreen> {
                           const SizedBox(height: 8),
                           Text(
                             "Select all the people you're open to meeting",
-                            style: GoogleFonts.inter(
+                            style: AppFonts.geist(
                                 color: const Color(0xFF9A979A)),
                           ),
                         ],
@@ -192,7 +192,7 @@ class _LikeTile extends StatelessWidget {
           children: [
             Expanded(
               child: Text(label,
-                  style: GoogleFonts.inter(
+                  style: AppFonts.geist(
                       fontSize: 18, color: const Color(0xFF1F1F1F))),
             ),
             Container(

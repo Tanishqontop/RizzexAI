@@ -1,5 +1,5 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Import Supabase
 import '../services/profile_service.dart'; // NEW: Import ProfileService
@@ -105,7 +105,7 @@ class _NotificationPromptScreenState extends State<NotificationPromptScreen> {
                   children: [
                     Text(
                       'Never miss a message from someone great',
-                      style: GoogleFonts.playfairDisplay(
+                      style: AppFonts.display(
                         fontSize: 32,
                         fontWeight: FontWeight.w700,
                       ),

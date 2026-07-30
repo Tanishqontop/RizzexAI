@@ -1,5 +1,5 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Import Supabase
 import '../services/profile_service.dart'; // NEW: Import ProfileService
 import 'political_belief_screen.dart';
@@ -96,7 +96,7 @@ class _ReligiousBeliefScreenState extends State<ReligiousBeliefScreen> {
                     Expanded(
                       child: Text(
                         'What are your religious beliefs?',
-                        style: GoogleFonts.playfairDisplay(
+                        style: AppFonts.display(
                           fontSize: 34,
                           height: 1.1,
                           fontWeight: FontWeight.w700,
@@ -122,7 +122,7 @@ class _ReligiousBeliefScreenState extends State<ReligiousBeliefScreen> {
                           setState(() => _visibleOnProfile = v ?? true),
                     ),
                     Text('Visible on profile',
-                        style: GoogleFonts.inter(fontSize: 16)),
+                        style: AppFonts.geist(fontSize: 16)),
                   ],
                 ),
                 const SizedBox(height: 100),
@@ -200,7 +200,7 @@ class _Tile extends StatelessWidget {
           children: [
             Expanded(
                 child: Text(label,
-                    style: GoogleFonts.inter(
+                    style: AppFonts.geist(
                         fontSize: 18, color: const Color(0xFF1F1F1F)))),
             Container(
               width: 22,

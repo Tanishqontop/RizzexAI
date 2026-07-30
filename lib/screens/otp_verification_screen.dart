@@ -1,6 +1,6 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'basic_info_intro_screen.dart';
@@ -110,7 +110,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               // Title
               Text(
                 'Enter your verification code from mail',
-                style: GoogleFonts.inter(
+                style: AppFonts.geist(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
@@ -122,18 +122,22 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               // Recipient info
               Row(
                 children: [
-                  Text(
-                    'Sent to ${widget.recipient}. ',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      color: Colors.grey[600],
+                  Flexible(
+                    child: Text(
+                      'Sent to ${widget.recipient}. ',
+                      style: AppFonts.geist(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Text(
                       'Edit',
-                      style: GoogleFonts.inter(
+                      style: AppFonts.geist(
                         fontSize: 16,
                         color: const Color(0xFF6B46C1),
                         fontWeight: FontWeight.w500,
@@ -158,7 +162,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       keyboardType: TextInputType.number,
                       textInputAction: index < 5 ? TextInputAction.next : TextInputAction.done,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: AppFonts.geist(
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
                         color: Colors.black87,
@@ -225,7 +229,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
               // Help text
               Text(
                 "Didn't get a code?",
-                style: GoogleFonts.inter(
+                style: AppFonts.geist(
                   fontSize: 14,
                   color: const Color(0xFF6B46C1),
                   fontWeight: FontWeight.w500,
@@ -254,7 +258,7 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
                       const SizedBox(width: 24), // Spacer
                       Text(
                         'Continue',
-                        style: GoogleFonts.inter(
+                        style: AppFonts.geist(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),

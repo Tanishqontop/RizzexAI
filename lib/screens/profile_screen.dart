@@ -1,5 +1,5 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/profile_service.dart';
 import 'dob_entry_screen.dart'; // Make sure this import path is correct
@@ -96,7 +96,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                       children: [
                         Text(
                           "What's your name?",
-                          style: GoogleFonts.playfairDisplay(
+                          style: AppFonts.display(
                             fontSize: 34,
                             fontWeight: FontWeight.w700,
                             color: const Color(0xFF1F1F1F),
@@ -109,7 +109,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                           decoration: InputDecoration(
                             hintText: 'First name (required)',
                             hintStyle:
-                                GoogleFonts.inter(color: Colors.grey[500]),
+                                AppFonts.geist(color: Colors.grey[500]),
                             border: const UnderlineInputBorder(),
                           ),
                           textCapitalization: TextCapitalization.words,
@@ -121,7 +121,7 @@ class _NameEntryScreenState extends State<NameEntryScreen> {
                           decoration: InputDecoration(
                             hintText: 'Last name',
                             hintStyle:
-                                GoogleFonts.inter(color: Colors.grey[500]),
+                                AppFonts.geist(color: Colors.grey[500]),
                             border: const UnderlineInputBorder(),
                           ),
                           textCapitalization: TextCapitalization.words,

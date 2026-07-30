@@ -5,6 +5,20 @@ import 'dart:developer' as developer;
 class ProfileService {
   final _supabase = Supabase.instance.client;
 
+  static const _videoExtensions = {'mp4', 'mov', 'webm', 'avi', 'mkv', 'm4v'};
+  static const _imageExtensions = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'};
+
+  static bool isProfileVideoUrl(String url) {
+    final path = Uri.tryParse(url)?.path ?? url;
+    final ext = path.split('.').last.toLowerCase();
+    return _videoExtensions.contains(ext);
+  }
+
+  static bool isProfileImageFile(File file) {
+    final ext = file.path.split('.').last.toLowerCase();
+    return _imageExtensions.contains(ext);
+  }
+
   /// Private helper to execute Supabase calls with standardized error handling.
   Future<T> _guardedCall<T>(Future<T> Function() function) async {
     try {
@@ -44,7 +58,11 @@ class ProfileService {
     required File file,
   }) async {
     return _guardedCall(() async {
-      final fileExtension = file.path.split('.').last;
+      if (!isProfileImageFile(file)) {
+        throw Exception('Only photos are allowed on your profile.');
+      }
+
+      final fileExtension = file.path.split('.').last.toLowerCase();
       final fileName =
           '${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
       final filePath = '$userId/$fileName';
@@ -116,6 +134,7 @@ class ProfileService {
     String? drugStatus,
     bool? drugStatusVisible,
     List<String>? mediaUrls,
+    bool? onboardingCompleted,
   }) async {
     return _guardedCall(() async {
       final updateData = <String, dynamic>{
@@ -128,11 +147,12 @@ class ProfileService {
       if (firstName != null) updateData['first_name'] = firstName;
       if (lastName != null) updateData['last_name'] = lastName;
       if (dob != null) {
-        updateData['date_of_birth'] = dob.toIso8601String();
-        // Calculate age from date of birth
+        updateData['date_of_birth'] =
+            '${dob.year}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}';
         final now = DateTime.now();
         int age = now.year - dob.year;
-        if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
+        if (now.month < dob.month ||
+            (now.month == dob.month && now.day < dob.day)) {
           age--;
         }
         updateData['age'] = age;
@@ -206,6 +226,9 @@ class ProfileService {
       if (drugStatusVisible != null)
         updateData['drug_status_visible'] = drugStatusVisible;
       if (mediaUrls != null) updateData['media_urls'] = mediaUrls;
+      if (onboardingCompleted != null) {
+        updateData['onboarding_completed'] = onboardingCompleted;
+      }
 
       updateData['updated_at'] = DateTime.now().toIso8601String();
 
@@ -213,5 +236,22 @@ class ProfileService {
       await _supabase.from('profiles').upsert(updateData);
       developer.log('Profile upserted successfully for user: $userId');
     });
+  }
+
+  Future<bool> isOnboardingCompleted(String userId) async {
+    final profile = await getProfile(userId);
+    if (profile == null) return false;
+
+    if (profile['onboarding_completed'] == true) return true;
+
+    // Returning users who filled out their profile before this flag existed.
+    final firstName = profile['first_name'] as String?;
+    final mediaUrls = profile['media_urls'] as List?;
+    final profilePhotos = profile['profile_photos'] as List?;
+    final hasName = firstName != null && firstName.trim().isNotEmpty;
+    final hasMedia = (mediaUrls != null && mediaUrls.isNotEmpty) ||
+        (profilePhotos != null && profilePhotos.isNotEmpty);
+
+    return hasName && hasMedia;
   }
 }

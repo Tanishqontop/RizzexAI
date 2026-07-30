@@ -111,7 +111,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to update password: \\${e.toString()}';
+          _errorMessage = 'Failed to update password: ${e.toString()}';
           _isLoading = false;
         });
       }
@@ -143,7 +143,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _errorMessage = 'Failed to send reset email: \\${e.toString()}';
+          _errorMessage = 'Failed to send reset email: ${e.toString()}';
           _isLoading = false;
         });
       }

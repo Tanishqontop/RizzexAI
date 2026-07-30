@@ -1,43 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:rizzexai/theme/app_typography.dart';
 
-class FontTestScreen extends StatelessWidget {
-  const FontTestScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Font Test',
-          style: TextStyle(fontFamily: 'PlayfairDisplay', color: Colors.white),
-        ),
+void main() {
+  runApp(
+    MaterialApp(
+      theme: ThemeData(fontFamily: AppFonts.family),
+      home: Scaffold(
         backgroundColor: Colors.black,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Text(
-              'Playfair Display Regular',
-              style: TextStyle(
-                fontFamily: 'PlayfairDisplay',
-                fontSize: 24,
-                color: Colors.black,
-              ),
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Playfair Display Bold',
-              style: TextStyle(
-                fontFamily: 'PlayfairDisplay',
-                fontWeight: FontWeight.bold,
-                fontSize: 24,
-                color: Colors.black,
-              ),
-            ),
-          ],
+        body: Center(
+          child: Text(
+            'Geist Sans Test',
+            style: AppFonts.display(fontSize: 32, color: Colors.white),
+          ),
         ),
       ),
-    );
-  }
+    ),
+  );
 }

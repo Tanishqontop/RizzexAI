@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
 import '../widgets/swipeable_card_stack.dart';
+import '../widgets/match_dialog.dart';
+import '../widgets/compliment_sheet.dart';
+import '../services/compliment_service.dart';
 import 'dart:developer' as developer;
 
 class FeedScreen extends StatefulWidget {
@@ -13,17 +16,33 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   final FeedService _feedService = FeedService();
+  final ComplimentService _complimentService = ComplimentService();
   List<User> _users = [];
   User? _currentUser;
   bool _isLoading = true;
   bool _isRefreshing = false;
   String? _error;
+  int _remainingCompliments = ComplimentService.dailyLimit;
+  int _swipedCount = 0;
+  Key _feedStackKey = UniqueKey();
 
   @override
   void initState() {
     super.initState();
     _loadCurrentUser();
     _loadUsers();
+    _loadComplimentQuota();
+  }
+
+  Future<void> _loadComplimentQuota() async {
+    try {
+      final remaining = await _complimentService.getRemainingComplimentsToday();
+      if (mounted) {
+        setState(() => _remainingCompliments = remaining);
+      }
+    } catch (e) {
+      developer.log('Error loading compliment quota: $e');
+    }
   }
 
   Future<void> _loadCurrentUser() async {
@@ -52,6 +71,8 @@ class _FeedScreenState extends State<FeedScreen> {
         setState(() {
           _users = users.cast<User>();
           _isLoading = false;
+          _swipedCount = 0;
+          _feedStackKey = UniqueKey();
         });
       }
     } catch (e) {
@@ -78,6 +99,8 @@ class _FeedScreenState extends State<FeedScreen> {
         setState(() {
           _users = users.cast<User>();
           _isRefreshing = false;
+          _swipedCount = 0;
+          _feedStackKey = UniqueKey();
         });
       }
     } catch (e) {
@@ -105,16 +128,57 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
+  Future<void> _sendCompliment(User user) async {
+    await showSendComplimentSheet(
+      context: context,
+      recipient: user,
+      remainingCompliments: _remainingCompliments,
+      onSend: (message) async {
+        try {
+          await _complimentService.sendCompliment(
+            recipientId: user.id,
+            message: message,
+          );
+          await _loadComplimentQuota();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Compliment sent to ${user.displayName}!',
+                ),
+                backgroundColor: const Color(0xFF6B46C1),
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+            );
+          }
+        }
+      },
+    );
+  }
+
   void _onSwipe(User user, SwipeDirection direction) async {
     try {
-      await _feedService.recordSwipe(
+      final match = await _feedService.recordSwipe(
         targetUserId: user.id,
-        isLike: direction == SwipeDirection.right || direction == SwipeDirection.up,
+        isLike: direction == SwipeDirection.right ||
+            direction == SwipeDirection.up,
         superLike: direction == SwipeDirection.up ? 'true' : null,
       );
-      
-      // Load more users if we're running low
-      if (_users.length - _getCurrentCardIndex() < 3) {
+
+      if (match != null && mounted) {
+        await showMatchDialog(context, match);
+      }
+
+      if (mounted) {
+        setState(() => _swipedCount++);
+      }
+
+      if (_users.length - _swipedCount < 3) {
         _loadMoreUsers();
       }
     } catch (e) {
@@ -122,12 +186,6 @@ class _FeedScreenState extends State<FeedScreen> {
     }
   }
 
-
-  int _getCurrentCardIndex() {
-    // This would need to be tracked by the SwipeableCardStack
-    // For now, we'll estimate based on the number of users
-    return _users.length;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -325,9 +383,12 @@ class _FeedScreenState extends State<FeedScreen> {
     }
 
     return SwipeableCardStack(
+      key: _feedStackKey,
       users: _users,
       currentUser: _currentUser,
       onSwipe: _onSwipe,
+      onCompliment: _sendCompliment,
+      remainingCompliments: _remainingCompliments,
       onEmpty: () {
         setState(() {
           _users.clear();

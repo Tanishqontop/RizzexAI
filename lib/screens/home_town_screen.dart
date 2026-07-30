@@ -1,5 +1,5 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Import Supabase
 import '../services/profile_service.dart'; // NEW: Import ProfileService
 import 'work_screen.dart';
@@ -93,7 +93,7 @@ class _HomeTownScreenState extends State<HomeTownScreen> {
                     Expanded(
                       child: Text(
                         "Where's your home town?",
-                        style: GoogleFonts.playfairDisplay(
+                        style: AppFonts.display(
                           fontSize: 34,
                           height: 1.1,
                           fontWeight: FontWeight.w700,
@@ -109,7 +109,7 @@ class _HomeTownScreenState extends State<HomeTownScreen> {
                   focusNode: _focusNode,
                   decoration: InputDecoration(
                     hintText: 'Home town',
-                    hintStyle: GoogleFonts.inter(
+                    hintStyle: AppFonts.geist(
                         color: const Color(0xFF9A979A),
                         fontSize: 22,
                         fontStyle: FontStyle.italic),
@@ -132,7 +132,7 @@ class _HomeTownScreenState extends State<HomeTownScreen> {
                           setState(() => _visibleOnProfile = v ?? true),
                     ),
                     Text('Visible on profile',
-                        style: GoogleFonts.inter(fontSize: 16)),
+                        style: AppFonts.geist(fontSize: 16)),
                   ],
                 ),
                 const SizedBox(height: 100), // Space for button

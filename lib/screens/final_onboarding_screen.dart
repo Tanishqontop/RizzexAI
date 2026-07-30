@@ -1,6 +1,8 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'home_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/profile_service.dart';
+import 'auth_wrapper.dart';
 
 class FinalOnboardingScreen extends StatefulWidget {
   const FinalOnboardingScreen({super.key, required this.uploadedCount});
@@ -12,6 +14,33 @@ class FinalOnboardingScreen extends StatefulWidget {
 }
 
 class _FinalOnboardingScreenState extends State<FinalOnboardingScreen> {
+  bool _isFinishing = false;
+
+  Future<void> _finishOnboarding() async {
+    if (_isFinishing) return;
+
+    setState(() => _isFinishing = true);
+
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId != null) {
+        await ProfileService().upsertProfile(
+          userId: userId,
+          onboardingCompleted: true,
+        );
+      }
+
+      if (!mounted) return;
+      navigateToAuthRoot(context);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to finish onboarding: $e')),
+        );
+        setState(() => _isFinishing = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +58,7 @@ class _FinalOnboardingScreenState extends State<FinalOnboardingScreen> {
                     Text(
                       "All done! Let's see who catches your eye.",
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.playfairDisplay(
+                      style: AppFonts.display(
                         fontSize: 44,
                         height: 1.1,
                         fontWeight: FontWeight.w700,
@@ -59,13 +88,7 @@ class _FinalOnboardingScreenState extends State<FinalOnboardingScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pushAndRemoveUntil(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
-                      (route) => false,
-                    );
-                  },
+                  onPressed: _isFinishing ? null : _finishOnboarding,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6B46C1),
                     foregroundColor: Colors.white,
@@ -74,13 +97,22 @@ class _FinalOnboardingScreenState extends State<FinalOnboardingScreen> {
                     ),
                     elevation: 0,
                   ),
-                  child: Text(
-                    'Start sending likes',
-                    style: GoogleFonts.inter(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: _isFinishing
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'Start sending likes',
+                          style: AppFonts.geist(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ),

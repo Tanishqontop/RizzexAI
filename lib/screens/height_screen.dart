@@ -1,5 +1,5 @@
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Import Supabase
 import '../services/profile_service.dart'; // NEW: Import ProfileService
 import 'ethnicity_screen.dart';
@@ -81,7 +81,7 @@ class _HeightScreenState extends State<HeightScreen> {
                     Expanded(
                       child: Text(
                         'How tall are you?',
-                        style: GoogleFonts.playfairDisplay(
+                        style: AppFonts.display(
                           fontSize: 34,
                           height: 1.1,
                           fontWeight: FontWeight.w700,
@@ -95,7 +95,7 @@ class _HeightScreenState extends State<HeightScreen> {
                 Center(
                   child: Text(
                     _formatHeight(),
-                    style: GoogleFonts.playfairDisplay(
+                    style: AppFonts.display(
                         fontSize: 44, color: const Color(0xFF1F1F1F)),
                   ),
                 ),
@@ -207,7 +207,7 @@ class _UnitChip extends StatelessWidget {
         ),
         child: Text(
           label,
-          style: GoogleFonts.inter(
+          style: AppFonts.geist(
             color: const Color(0xFF1F1F1F),
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
           ),

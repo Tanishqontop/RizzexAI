@@ -22,7 +22,6 @@ dependencies:
   supabase_flutter: ^2.0.0
   flutter_svg: ^2.0.7
   cupertino_icons: ^1.0.2
-  google_fonts: ^6.1.0
   flutter_markdown: ^0.7.7+1
   app_links: ^6.4.1
   video_player: ^2.8.2
@@ -39,6 +38,22 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  fonts:
+    - family: GeistSans
+      fonts:
+        - asset: assets/fonts/Geist-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Geist-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Geist-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Geist-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Geist-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Geist-Black.ttf
+          weight: 800
 
   assets:
     - assets/

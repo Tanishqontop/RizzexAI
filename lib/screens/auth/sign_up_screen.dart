@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import 'sign_in_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../otp_verification_screen.dart';
+// TODO: Re-enable when Google auth is needed
+// import 'package:supabase_flutter/supabase_flutter.dart';
+// TODO: Re-enable when OTP verification is needed
+// import '../otp_verification_screen.dart';
+import '../auth_wrapper.dart';
+import '../basic_info_intro_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -42,8 +46,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
-            builder: (context) => OtpVerificationScreen(
-              recipient: _emailController.text.trim(),
+            builder: (_) => const AuthenticatedGate(
+              child: BasicInfoIntroScreen(),
             ),
           ),
           (route) => false,
@@ -59,6 +63,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
+  // TODO: Re-enable when Google auth is needed
+  /*
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
       await Supabase.instance.client.auth.signInWithOAuth(
@@ -73,12 +79,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
     }
   }
+  */
 
   String? _validateEmail(String? value) {
     if (value == null || value.isEmpty) {
       return 'Please enter your email';
     }
-    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+\u0000?$');
+    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     if (!emailRegex.hasMatch(value)) {
       return 'Please enter a valid email';
     }
@@ -291,6 +298,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   ),
                                 ),
                               ),
+                              // TODO: Re-enable when Google auth is needed
+                              /*
                               const SizedBox(height: 16),
                               Row(
                                 children: [
@@ -340,6 +349,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                                   ),
                                 ],
                               ),
+                              */
                             ],
                           ),
                         ),

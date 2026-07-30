@@ -1,9 +1,10 @@
-import 'dart:io';
+import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/profile_service.dart';
+import 'profile_edit_screen.dart';
+import 'profile_settings_screen.dart';
+import '../widgets/spotlight_sheet.dart';
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -15,97 +16,96 @@ class MyProfileScreen extends StatefulWidget {
 class _MyProfileScreenState extends State<MyProfileScreen> {
   final _profileService = ProfileService();
   final _currentUser = Supabase.instance.client.auth.currentUser;
-  
+  final _promoController = PageController(viewportFraction: 0.88);
+
   Map<String, dynamic>? _profileData;
   bool _loading = true;
-  bool _saving = false;
   bool _profilePictureRemoved = false;
+  int _selectedCategory = 0;
+  bool _isRizzMaxSelected = false;
 
-  // Helpers
-  int _calculateAge(DateTime dob) {
-    final now = DateTime.now();
-    int age = now.year - dob.year;
-    if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
-      age--;
-    }
-    return age;
-  }
+  static const _categories = [
+    'Pay plan',
+    'Photo insights',
+    'Safety and well-being',
+  ];
 
-  // Onboarding option sets (reused here)
-  static const List<String> _pronounOptions = [
-    'she', 'her', 'hers', 'he', 'him', 'his', 'they', 'them'
+  static const _rizzPlusTagline =
+      'Best for: People looking to meet and chat.';
+
+  static const _rizzPlusFeatures = [
+    'Unlimited Likes',
+    'Unlimited Matches',
+    'Unlimited Messaging',
+    'See Who Liked You',
+    'Unlimited Rewinds',
+    '5 Super Likes per week',
+    '1 Profile Boost per month',
+    'AI Bio Generator',
+    'AI Profile Review',
+    'AI Conversation Starters',
+    'AI Pickup Line Generator',
+    'Advanced Search Filters',
+    'Change Location (up to 5 cities/month)',
+    'Verified Profile Badge',
+    'Ad-Free Experience',
   ];
-  static const List<String> _genderOptions = ['Man', 'Woman', 'Non-binary'];
-  static const List<String> _sexualityOptions = [
-    'Prefer not to say',
-    'Straight',
-    'Gay',
-    'Lesbian',
-    'Bisexual',
-    'Allosexual',
-    'Androsexual',
-    'Asexual',
-    'Autosexual',
-    'Bicurious',
-  ];
-  static const List<String> _likeToDateOptions = [
-    'Men', 'Women', 'Non-binary people', 'Everyone'
-  ];
-  static const List<String> _datingIntentionOptions = [
-    'Life partner',
-    'Long-term relationship',
-    'Long-term relationship, open to short',
-    'Short-term relationship, open to long',
-    'Short-term relationship',
-    'Figuring out my dating goals',
-    'Prefer not to say',
-  ];
-  static const List<String> _relationshipTypeOptions = [
-    'Monogamy', 'Non-monogamy', 'Figuring out my relationship type'
-  ];
-  static const List<String> _ethnicityOptions = [
-    'Black/African Descent',
-    'East Asian',
-    'Hispanic/Latino',
-    'Middle Eastern',
-    'Native American',
-    'Pacific Islander',
-    'South Asian',
-    'Southeast Asian',
-    'White/Caucasian',
-    'Other',
-  ];
-  static const List<String> _childrenOptions = [
-    "Don't have children", 'Have children', 'Prefer not to say'
-  ];
-  static const List<String> _familyPlanOptions = [
-    "Don't want children",
-    'Want children',
-    'Open to children',
-    'Not sure yet',
-    'Prefer not to say',
-  ];
-  static const List<String> _educationLevelOptions = [
-    'Secondary school', 'Undergrad', 'Postgrad', 'Prefer not to say'
-  ];
-  static const List<String> _religiousBeliefOptions = [
-    'Agnostic',
-    'Atheist',
-    'Buddhist',
-    'Catholic',
-    'Christian',
-    'Hindu',
-    'Jewish',
-    'Muslim',
-    'Sikh',
-    'Spiritual',
-    'Other',
-  ];
-  static const List<String> _politicalBeliefOptions = [
-    'Liberal', 'Moderate', 'Conservative', 'Not political', 'Other', 'Prefer not to say'
-  ];
-  static const List<String> _yesSometimesNoOptions = [
-    'Yes', 'Sometimes', 'No', 'Prefer not to say'
+
+  static const _rizzMaxSections = [
+    _PlanFeatureSection(
+      title: 'Visibility',
+      features: [
+        'Priority Profile Ranking',
+        'Unlimited Profile Boosts',
+        'Unlimited Super Likes',
+        'Priority Like Delivery',
+        'New User Spotlight',
+      ],
+    ),
+    _PlanFeatureSection(
+      title: 'Privacy',
+      features: [
+        'Incognito Mode',
+        'Control who can message you',
+        'Hide online status',
+        'Read Receipts',
+      ],
+    ),
+    _PlanFeatureSection(
+      title: 'AI Features',
+      features: [
+        'AI Dating Coach',
+        'AI Chat Assistant (reply suggestions)',
+        'AI Conversation Analysis',
+        'AI Flirting Coach',
+        'AI Date Planner',
+        'AI Compatibility Score',
+        'AI Red Flag Detection',
+        'AI Profile Optimization',
+        'AI Voice Icebreakers',
+      ],
+    ),
+    _PlanFeatureSection(
+      title: 'Insights',
+      features: [
+        'Weekly Dating Analytics',
+        'Profile Views',
+        'Like Rate',
+        'Match Rate',
+        'Response Rate',
+        'Conversation Success Rate',
+        'AI Improvement Tips',
+      ],
+    ),
+    _PlanFeatureSection(
+      title: 'Exclusives',
+      features: [
+        'Exclusive RizzMax Badge',
+        'Premium Profile Themes',
+        'Early Access to New Features',
+        'Priority Customer Support',
+      ],
+    ),
   ];
 
   @override
@@ -114,17 +114,21 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
     _loadProfileData();
   }
 
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
+  }
 
   Future<void> _loadProfileData() async {
     if (_currentUser == null) return;
-    
+
     setState(() => _loading = true);
     try {
       final profile = await _profileService.getProfile(_currentUser!.id);
-      if (profile != null) {
+      if (profile != null && mounted) {
         setState(() {
           _profileData = profile;
-          // Check if user has explicitly removed their profile picture
           final avatarUrl = profile['avatar_url']?.toString();
           _profilePictureRemoved = avatarUrl != null && avatarUrl.isEmpty;
         });
@@ -136,1532 +140,588 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
         );
       }
     } finally {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 
-
-  Future<void> _updateProfilePicture() async {
-    if (_currentUser == null) return;
-    
-    // Show image source selection
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library, color: Color(0xFF6B46C1)),
-                title: const Text('Choose from Gallery'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await _pickAndUploadImage(ImageSource.gallery);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.camera_alt, color: Color(0xFF6B46C1)),
-                title: const Text('Take Photo'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  await _pickAndUploadImage(ImageSource.camera);
-                },
-              ),
-              if (_getProfileImageUrl().isNotEmpty)
-                ListTile(
-                  leading: const Icon(Icons.delete, color: Colors.red),
-                  title: const Text('Remove Profile Picture'),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    await _removeProfilePicture();
-                  },
-                ),
-            ],
-          ),
-        );
-      },
+  Future<void> _openSettings() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfileSettingsScreen()),
     );
+    await _loadProfileData();
   }
 
-  Future<void> _pickAndUploadImage(ImageSource source) async {
-    if (_currentUser == null) return;
-    
-    final picker = ImagePicker();
-    final result = await picker.pickImage(
-      source: source,
-      imageQuality: 85, // Compress image for better performance
-      maxWidth: 1024,
-      maxHeight: 1024,
+  Future<void> _openEditProfile() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfileEditScreen()),
     );
-    
-    if (result != null) {
-      setState(() => _saving = true);
-      try {
-        final file = File(result.path);
-        
-        // Validate file size (max 5MB)
-        final fileSize = await file.length();
-        if (fileSize > 5 * 1024 * 1024) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Image too large. Please choose an image smaller than 5MB.')),
-            );
-          }
-          return;
+    await _loadProfileData();
+  }
+
+  int? _getProfileAge() {
+    final raw = _profileData?['date_of_birth'] ?? _profileData?['dob'];
+    if (raw != null) {
+      final dob = DateTime.tryParse(raw.toString());
+      if (dob != null) {
+        final now = DateTime.now();
+        int age = now.year - dob.year;
+        if (now.month < dob.month ||
+            (now.month == dob.month && now.day < dob.day)) {
+          age--;
         }
-        
-        final url = await _profileService.uploadProfileMedia(
-          userId: _currentUser!.id,
-          file: file,
-        );
-        
-        
-        // Update the profile with new avatar URL
-        await _profileService.upsertProfile(
-          userId: _currentUser!.id,
-          avatarUrl: url,
-        );
-        
-        // Reset the removed flag since user has set a new profile picture
-        setState(() {
-          _profilePictureRemoved = false;
-        });
-        
-        // Reload profile data
-        await _loadProfileData();
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile picture updated successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error updating picture: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } finally {
-        setState(() => _saving = false);
+        return age;
       }
     }
+    final age = _profileData?['age'];
+    if (age is int) return age;
+    if (age is num) return age.toInt();
+    return null;
   }
-
-  Future<void> _removeProfilePicture() async {
-    if (_currentUser == null) return;
-    
-    // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remove Profile Picture'),
-        content: const Text('Are you sure you want to remove your profile picture?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Remove'),
-          ),
-        ],
-      ),
-    );
-    
-    if (confirmed == true) {
-      setState(() => _saving = true);
-      try {
-        // Clear the avatar URL
-        await _profileService.upsertProfile(
-          userId: _currentUser!.id,
-          avatarUrl: '',
-        );
-        
-        // Set flag to indicate profile picture was removed
-        setState(() {
-          _profilePictureRemoved = true;
-        });
-        
-        // Reload profile data
-        await _loadProfileData();
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile picture removed successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error removing picture: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } finally {
-        setState(() => _saving = false);
-      }
-    }
-  }
-
 
   String _getProfileImageUrl() {
-    if (_profileData == null) return '';
-    
-    // If user has explicitly removed their profile picture, don't show any image
-    if (_profilePictureRemoved) {
-      return '';
-    }
-    
-    // Check if user has set a profile picture
+    if (_profileData == null || _profilePictureRemoved) return '';
+
     final avatarUrl = _profileData!['avatar_url']?.toString();
-    if (avatarUrl != null && avatarUrl.isNotEmpty) {
-      return avatarUrl;
-    }
-    
-    // Fallback to first media in media_urls (onboarding uploads) only if no profile picture removed
+    if (avatarUrl != null && avatarUrl.isNotEmpty) return avatarUrl;
+
     final media = _profileData!['media_urls'] as List<dynamic>?;
-    if (media != null && media.isNotEmpty) {
-      return media.first.toString();
+    if (media != null) {
+      for (final item in media) {
+        final url = item.toString();
+        if (!ProfileService.isProfileVideoUrl(url)) return url;
+      }
     }
-    
     return '';
   }
 
-  String _getFullName() {
-    final firstName = _profileData?['first_name'] ?? '';
-    final lastName = _profileData?['last_name'] ?? '';
-    return '$firstName $lastName'.trim();
+  String _getDisplayName() {
+    final firstName = _profileData?['first_name']?.toString().trim() ?? '';
+    if (firstName.isEmpty) return 'Your Name';
+    final age = _getProfileAge();
+    return age != null ? '$firstName, $age' : firstName;
+  }
+
+  bool _hasValue(dynamic value) {
+    if (value == null) return false;
+    if (value is String) return value.trim().isNotEmpty;
+    if (value is List) return value.isNotEmpty;
+    return true;
+  }
+
+  int _calculateCompletionPercent() {
+    if (_profileData == null) return 0;
+
+    final checks = [
+      _hasValue(_profileData!['first_name']),
+      _getProfileAge() != null,
+      _getProfileImageUrl().isNotEmpty ||
+          _hasValue(_profileData!['media_urls']),
+      _hasValue(_profileData!['gender']),
+      _hasValue(_profileData!['bio']),
+      _hasValue(_profileData!['location']),
+      _hasValue(_profileData!['dating_intention']),
+      _hasValue(_profileData!['height_cm']),
+      _hasValue(_profileData!['work']),
+      _hasValue(_profileData!['education_level']),
+    ];
+
+    final filled = checks.where((c) => c).length;
+    return ((filled / checks.length) * 100).round();
   }
 
   @override
   Widget build(BuildContext context) {
+    final completion = _calculateCompletionPercent();
+
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF6B46C1),
-        title: const Text('Profile', style: TextStyle(color: Colors.white)),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_horiz, color: Colors.white),
-            onPressed: () {
-              // Show menu options
-            },
-          ),
-        ],
-      ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: Color(0xFF6B46C1)))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  // Profile Picture Section
-                  Center(
-                    child: Stack(
-                    children: [
-                      GestureDetector(
-                        onTap: _updateProfilePicture,
-                        child: Container(
-                            width: 140,
-                            height: 140,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: const Color(0xFF6B46C1).withOpacity(0.1),
-                            border: Border.all(
-                              color: const Color(0xFF6B46C1),
-                              width: 3,
-                            ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF6B46C1).withOpacity(0.2),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                          ),
-                            child: _getProfileImageUrl().isNotEmpty
-                                ? ClipOval(
-                                    child: Image.network(
-                                      _getProfileImageUrl(),
-                                      fit: BoxFit.cover,
-                                      cacheWidth: 140,
-                                      cacheHeight: 140,
-                                      loadingBuilder: (context, child, loadingProgress) {
-                                        if (loadingProgress == null) return child;
-                                        return const Center(
-                                          child: CircularProgressIndicator(
-                                            color: Color(0xFF6B46C1),
-                                            strokeWidth: 2,
-                                          ),
-                                        );
-                                      },
-                                      errorBuilder: (context, error, stackTrace) {
-                                        return const Icon(
-                                          Icons.person,
-                                          size: 70,
-                                          color: Color(0xFF6B46C1),
-                                        );
-                                      },
-                                    ),
-                                  )
-                              : const Icon(
-                                  Icons.person,
-                                    size: 70,
-                                  color: Color(0xFF6B46C1),
-                                ),
-                        ),
-                      ),
-                      if (_saving)
-                        Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                                color: Colors.black.withOpacity(0.6),
-                            ),
-                            child: const Center(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    CircularProgressIndicator(
-                                color: Colors.white,
-                                      strokeWidth: 3,
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'Updating...',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                            ),
-                          ),
-                        ),
-                      Positioned(
-                          bottom: 8,
-                          right: 8,
-                        child: GestureDetector(
-                          onTap: _updateProfilePicture,
-                          child: Container(
-                              width: 36,
-                              height: 36,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF6B46C1),
-                              shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.2),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                            ),
-                            child: const Icon(
-                              Icons.camera_alt,
-                color: Colors.white,
-                                size: 18,
-                            ),
-              ),
-            ),
-          ),
-        ],
-                    ),
-      ),
-                  
-                  const SizedBox(height: 16),
-                  
-                  // Name
-                  Text(
-                    _getFullName().isNotEmpty ? _getFullName() : 'Your Name',
-                    style: GoogleFonts.playfairDisplay(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: const Color(0xFF1F1F1F),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  // Onboarding Data Section
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey[200]!),
-                    ),
-        child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-                        Text(
-                          'Your Profile Information',
-                          style: GoogleFonts.inter(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF1F1F1F),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        // Basics Section
-                        _buildSectionHeader('Basic Information'),
-                        _buildEditableRow('First Name', 'first_name', _profileData?['first_name']?.toString() ?? ''),
-                        _buildEditableRow('Last Name', 'last_name', _profileData?['last_name']?.toString() ?? ''),
-                        _buildDobRow(),
-                        _buildComputedAgeRow(),
-                        _buildToggleRow('Notifications', 'notifications_enabled', (_profileData?['notifications_enabled'] as bool?) ?? false),
-
-                        const SizedBox(height: 24),
-                        // Identity Section
-                        _buildSectionHeader('Identity'),
-                        _buildMultiSelectRow(
-                          'Pronouns',
-                          'pronouns',
-                          ((_profileData?['pronouns'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const []),
-                          _pronounOptions,
-                          maxSelections: 4,
-                        ),
-                        _buildVisibilitySwitch('Pronouns visible', 'pronouns_visible', (_profileData?['pronouns_visible'] as bool?) ?? true),
-                        _buildSingleSelectRow(
-                          'Gender',
-                          'gender',
-                          _profileData?['gender']?.toString() ?? '',
-                          _genderOptions,
-                        ),
-                        _buildVisibilitySwitch('Gender visible', 'gender_visible', (_profileData?['gender_visible'] as bool?) ?? true),
-                        _buildSingleSelectRow(
-                          'Sexuality',
-                          'sexuality',
-                          _profileData?['sexuality']?.toString() ?? '',
-                          _sexualityOptions,
-                        ),
-                        _buildVisibilitySwitch('Sexuality visible', 'sexuality_visible', (_profileData?['sexuality_visible'] as bool?) ?? true),
-
-                        const SizedBox(height: 24),
-                        // Preferences Section
-                        _buildSectionHeader('Dating Preferences'),
-                        _buildMultiSelectRow(
-                          'Like to date',
-                          'dating_preference',
-                          ((_profileData?['dating_preference'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const []),
-                          _likeToDateOptions,
-                        ),
-                        _buildSingleSelectRow(
-                          'Dating intention',
-                          'dating_intention',
-                          _profileData?['dating_intention']?.toString() ?? '',
-                          _datingIntentionOptions,
-                        ),
-                        _buildVisibilitySwitch('Dating intention visible', 'dating_intention_visible', (_profileData?['dating_intention_visible'] as bool?) ?? true),
-                        _buildMultiSelectRow(
-                          'Type of relationship',
-                          'relationship_type',
-                          ((_profileData?['relationship_type'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const []),
-                          _relationshipTypeOptions,
-                        ),
-                        _buildVisibilitySwitch('Relationship type visible', 'relationship_type_visible', (_profileData?['relationship_type_visible'] as bool?) ?? true),
-
-                        const SizedBox(height: 24),
-                        // Location Section
-                        _buildSectionHeader('Location'),
-                        _buildEditableRow('Place you live', 'location', _profileData?['location']?.toString() ?? ''),
-                        _buildEditableRow('Hometown', 'hometown', _profileData?['hometown']?.toString() ?? ''),
-                        _buildVisibilitySwitch('Hometown visible', 'hometown_visible', (_profileData?['hometown_visible'] as bool?) ?? true),
-
-                        const SizedBox(height: 24),
-                        // Physical Section
-                        _buildSectionHeader('Physical'),
-                        _buildEditableRow('Height (cm)', 'height_cm', (_profileData?['height_cm']?.toString() ?? ''), isNumber: true),
-                        _buildMultiSelectRow(
-                          'Ethnicity',
-                          'ethnicity',
-                          ((_profileData?['ethnicity'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const []),
-                          _ethnicityOptions,
-                        ),
-                        _buildVisibilitySwitch('Ethnicity visible', 'ethnicity_visible', (_profileData?['ethnicity_visible'] as bool?) ?? true),
-
-                        // Family
-                        _buildSingleSelectRow(
-                          'Have children',
-                          'children_status',
-                          _profileData?['children_status']?.toString() ?? '',
-                          _childrenOptions,
-                        ),
-                        _buildVisibilitySwitch('Children status visible', 'children_status_visible', (_profileData?['children_status_visible'] as bool?) ?? true),
-                        _buildSingleSelectRow(
-                          'Family plan',
-                          'family_plans',
-                          _profileData?['family_plans']?.toString() ?? '',
-                          _familyPlanOptions,
-                        ),
-                        _buildVisibilitySwitch('Family plan visible', 'family_plans_visible', (_profileData?['family_plans_visible'] as bool?) ?? true),
-
-                        // Work & Education
-                        _buildEditableRow('Where do you work', 'work', _profileData?['work']?.toString() ?? ''),
-                        _buildVisibilitySwitch('Work visible', 'work_visible', (_profileData?['work_visible'] as bool?) ?? true),
-                        _buildEditableRow('Job title', 'job_title', _profileData?['job_title']?.toString() ?? ''),
-                        _buildVisibilitySwitch('Job title visible', 'job_title_visible', (_profileData?['job_title_visible'] as bool?) ?? true),
-                        _buildEditableRow('College', 'education', _profileData?['education']?.toString() ?? ''),
-                        _buildVisibilitySwitch('College visible', 'education_visible', (_profileData?['education_visible'] as bool?) ?? true),
-                        _buildSingleSelectRow(
-                          'Highest education level',
-                          'education_level',
-                          _profileData?['education_level']?.toString() ?? '',
-                          _educationLevelOptions,
-                        ),
-                        _buildVisibilitySwitch('Education level visible', 'education_level_visible', (_profileData?['education_level_visible'] as bool?) ?? true),
-
-                        // Beliefs
-                        _buildMultiSelectRow(
-                          'Religious beliefs',
-                          'religious_beliefs',
-                          ((_profileData?['religious_beliefs'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? const []),
-                          _religiousBeliefOptions,
-                        ),
-                        _buildVisibilitySwitch('Religious beliefs visible', 'religious_beliefs_visible', (_profileData?['religious_beliefs_visible'] as bool?) ?? true),
-                        _buildSingleSelectRow(
-                          'Political belief',
-                          'political_beliefs',
-                          _profileData?['political_beliefs']?.toString() ?? '',
-                          _politicalBeliefOptions,
-                        ),
-                        _buildVisibilitySwitch('Political belief visible', 'political_beliefs_visible', (_profileData?['political_beliefs_visible'] as bool?) ?? true),
-
-                        // Lifestyle
-                        _buildSingleSelectRow(
-                          'Drink',
-                          'drinking_status',
-                          _profileData?['drinking_status']?.toString() ?? '',
-                          _yesSometimesNoOptions,
-                        ),
-                        _buildVisibilitySwitch('Drink status visible', 'drinking_status_visible', (_profileData?['drinking_status_visible'] as bool?) ?? true),
-                        _buildSingleSelectRow(
-                          'Smoke',
-                          'smoking_status',
-                          _profileData?['smoking_status']?.toString() ?? '',
-                          _yesSometimesNoOptions,
-                        ),
-                        _buildVisibilitySwitch('Smoke status visible', 'smoking_status_visible', (_profileData?['smoking_status_visible'] as bool?) ?? true),
-                        _buildSingleSelectRow(
-                          'Weed',
-                          'weed_status',
-                          _profileData?['weed_status']?.toString() ?? '',
-                          _yesSometimesNoOptions,
-                        ),
-                        _buildVisibilitySwitch('Weed status visible', 'weed_status_visible', (_profileData?['weed_status_visible'] as bool?) ?? true),
-                        _buildSingleSelectRow(
-                          'Drug',
-                          'drug_status',
-                          _profileData?['drug_status']?.toString() ?? '',
-                          _yesSometimesNoOptions,
-                        ),
-                        _buildVisibilitySwitch('Drug status visible', 'drug_status_visible', (_profileData?['drug_status_visible'] as bool?) ?? true),
-
-                        _buildEditableRow('Bio', 'bio', _profileData?['bio']?.toString() ?? ''),
-
-                        const SizedBox(height: 16),
-                        _buildMediaSection(),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-    );
-  }
-
-  // Removed unused _buildInfoRow
-
-  Widget _buildSectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12, top: 8),
-      child: Text(
-        title,
-        style: GoogleFonts.inter(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: const Color(0xFF6B46C1),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEditableRow(String label, String fieldKey, String value,
-      {bool isNumber = false, bool isList = false}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  value.isEmpty ? 'Not set' : value,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF1F1F1F),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          TextButton.icon(
-            onPressed: _saving
-                ? null
-                : () => _showEditSheet(label, fieldKey, value,
-                    isNumber: isNumber, isList: isList),
-            icon: const Icon(Icons.edit, size: 16),
-            label: const Text('Edit'),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF6B46C1),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildVisibilitySwitch(String label, String visibleKey, bool current) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Switch(
-            value: current,
-            activeColor: const Color(0xFF6B46C1),
-            onChanged: _saving
-                ? null
-                : (v) async {
-                    await _saveVisibility(visibleKey, v);
-                  },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSingleSelectRow(
-      String label, String fieldKey, String currentValue, List<String> options) {
-    final display = currentValue.isEmpty ? 'Not set' : currentValue;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  display,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF1F1F1F),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          TextButton.icon(
-            onPressed: _saving
-                ? null
-                : () => _showSingleSelectSheet(label, fieldKey, currentValue, options),
-            icon: const Icon(Icons.edit, size: 16),
-            label: const Text('Edit'),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF6B46C1),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showSingleSelectSheet(
-      String label, String fieldKey, String currentValue, List<String> options) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8, top: 12),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: Text(
-                    'Select $label',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF1F1F1F),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ...options.map((o) => ListTile(
-                      title: Text(o),
-                      trailing:
-                          currentValue == o ? const Icon(Icons.check, color: Color(0xFF6B46C1)) : null,
-                      onTap: () async {
-                        Navigator.of(context).pop();
-                        await _saveField(fieldKey, o);
-                      },
-                    )),
-                const SizedBox(height: 8),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMultiSelectRow(String label, String fieldKey, List<String> values,
-      List<String> options, {int? maxSelections}) {
-    final display = values.isEmpty ? 'Not set' : values.join(', ');
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  display,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF1F1F1F),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          TextButton.icon(
-            onPressed: _saving
-                ? null
-                : () => _showMultiSelectSheet(
-                      label,
-                      fieldKey,
-                      values,
-                      options,
-                      maxSelections: maxSelections,
-                    ),
-            icon: const Icon(Icons.edit, size: 16),
-            label: const Text('Edit'),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF6B46C1),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showMultiSelectSheet(String label, String fieldKey, List<String> values,
-      List<String> options, {int? maxSelections}) {
-    final Set<String> selected = values.toSet();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return StatefulBuilder(builder: (context, setModalState) {
-          return SafeArea(
-            child: Padding(
-              padding:
-                  EdgeInsets.only(left: 8, right: 8, bottom: MediaQuery.of(context).viewInsets.bottom + 8, top: 12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text(
-                      'Select $label',
-                      style: GoogleFonts.inter(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF1F1F1F),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...options.map((o) {
-                    final isSelected = selected.contains(o);
-                    return CheckboxListTile(
-                      value: isSelected,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      activeColor: const Color(0xFF6B46C1),
-                      title: Text(o),
-                      onChanged: (v) {
-                        setModalState(() {
-                          if (isSelected) {
-                            selected.remove(o);
-                          } else {
-                            if (maxSelections == null || selected.length < maxSelections) {
-                              selected.add(o);
-                            }
-                          }
-                        });
-                      },
-                    );
-                  }).toList(),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        Navigator.of(context).pop();
-                        await _saveField(fieldKey, selected.join(','), isList: true);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF6B46C1),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text('Save', style: TextStyle(color: Colors.white)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        });
-      },
-    );
-  }
-  Widget _buildToggleRow(String label, String boolKey, bool current) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-          Switch(
-            value: current,
-            activeColor: const Color(0xFF6B46C1),
-            onChanged: _saving
-                ? null
-                : (v) async {
-                    await _saveBoolean(boolKey, v);
-                  },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDobRow() {
-    final dobIso = _profileData?['dob']?.toString();
-    final dob = dobIso != null && dobIso.isNotEmpty ? DateTime.tryParse(dobIso) : null;
-    final text = dob != null ? '${dob.year}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}' : 'Not set';
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Date of Birth',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  text,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF1F1F1F),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          TextButton.icon(
-            onPressed: _saving ? null : _pickDob,
-            icon: const Icon(Icons.edit, size: 16),
-            label: const Text('Edit'),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF6B46C1),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildComputedAgeRow() {
-    final dobIso = _profileData?['dob']?.toString();
-    final dob = dobIso != null && dobIso.isNotEmpty ? DateTime.tryParse(dobIso) : null;
-    final ageText = dob != null ? _calculateAge(dob).toString() : 'Not set';
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Age (auto-calculated)',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  ageText,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF1F1F1F),
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _pickDob() async {
-    if (_currentUser == null) return;
-    final now = DateTime.now();
-    final initial = DateTime(now.year - 25, now.month, now.day);
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: initial,
-      firstDate: DateTime(1900),
-      lastDate: DateTime(now.year - 10, now.month, now.day),
-      helpText: 'Select your date of birth',
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: const Color(0xFF6B46C1),
-                ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() => _saving = true);
-      try {
-        await _profileService.upsertProfile(userId: _currentUser!.id, dob: picked);
-        await _loadProfileData();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Date of birth updated')),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to update DOB: $e')),
-          );
-        }
-      } finally {
-        if (mounted) setState(() => _saving = false);
-      }
-    }
-  }
-
-  Widget _buildMediaSection() {
-    final List<dynamic> media = (_profileData?['media_urls'] as List<dynamic>?) ?? [];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Photos & Videos',
-          style: GoogleFonts.inter(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF1F1F1F),
-          ),
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            ...media.map((url) {
-              final String u = url.toString();
-              final isVideo = u.toLowerCase().endsWith('.mp4') || u.toLowerCase().endsWith('.mov');
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Stack(
+          ? const Center(child: CircularProgressIndicator(color: Colors.black))
+          : SafeArea(
+              child: RefreshIndicator(
+                onRefresh: _loadProfileData,
+                color: Colors.black,
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                   children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      color: Colors.grey[200],
-                      child: isVideo
-                          ? Center(
-                              child: Icon(Icons.videocam, color: Colors.grey[600]),
-                            )
-                          : Image.network(
-                              u,
-                              width: 100,
-                              height: 100,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Center(
-                                child: Icon(Icons.broken_image, color: Colors.grey[600]),
-                              ),
-                            ),
-                    ),
+                    _buildHeader(),
+                    const SizedBox(height: 24),
+                    _buildProfileSummary(completion),
+                    const SizedBox(height: 28),
+                    _buildCategoryBar(),
+                    const SizedBox(height: 24),
+                    _buildActionCards(),
+                    const SizedBox(height: 24),
+                    _buildPromoCarousel(),
+                    const SizedBox(height: 28),
+                    _buildFeatureComparison(),
                   ],
                 ),
-              );
-            }).toList(),
-            GestureDetector(
-              onTap: _saving ? null : _addMedia,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6B46C1).withOpacity(0.06),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF6B46C1)),
-                ),
-                child: const Center(
-                  child: Icon(Icons.add, color: Color(0xFF6B46C1)),
-                ),
               ),
             ),
-          ],
+    );
+  }
+
+  Widget _buildHeader() {
+    return Row(
+      children: [
+        Text(
+          'Profile',
+          style: AppFonts.geist(
+            fontSize: 32,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+            letterSpacing: -0.5,
+          ),
+        ),
+        const Spacer(),
+        IconButton(
+          onPressed: () {},
+          icon: const Icon(Icons.help_outline, size: 26),
+          color: Colors.black,
+        ),
+        IconButton(
+          onPressed: _openSettings,
+          icon: const Icon(Icons.settings_outlined, size: 26),
+          color: Colors.black,
         ),
       ],
     );
   }
 
-  Future<void> _addMedia() async {
-    if (_currentUser == null) return;
-    final picker = ImagePicker();
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return SafeArea(
-          child: Wrap(
+  Widget _buildProfileSummary(int completion) {
+    final imageUrl = _getProfileImageUrl();
+    final progress = completion / 100;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        SizedBox(
+          width: 88,
+          height: 88,
+          child: Stack(
+            alignment: Alignment.center,
             children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Add photos'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final images = await picker.pickMultiImage();
-                  if (images.isEmpty) return;
-                  setState(() => _saving = true);
-                  try {
-                    final existing = ((_profileData?['media_urls'] as List<dynamic>?)?.map((e) => e.toString()).toList()) ?? <String>[];
-                    final List<String> newUrls = [];
-                    for (final x in images) {
-                      final url = await _profileService.uploadProfileMedia(userId: _currentUser!.id, file: File(x.path));
-                      newUrls.add(url);
-                    }
-                    await _profileService.upsertProfile(userId: _currentUser!.id, mediaUrls: [...existing, ...newUrls]);
-                    await _loadProfileData();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Photos added')));
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to add photos: $e')));
-                    }
-                  } finally {
-                    if (mounted) setState(() => _saving = false);
-                  }
-                },
+              SizedBox(
+                width: 88,
+                height: 88,
+                child: CircularProgressIndicator(
+                  value: progress,
+                  strokeWidth: 4,
+                  backgroundColor: const Color(0xFFE8E8E8),
+                  color: const Color(0xFF2B2B2B),
+                ),
               ),
-              ListTile(
-                leading: const Icon(Icons.videocam),
-                title: const Text('Add video'),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final video = await picker.pickVideo(source: ImageSource.gallery);
-                  if (video == null) return;
-                  setState(() => _saving = true);
-                  try {
-                    final existing = ((_profileData?['media_urls'] as List<dynamic>?)?.map((e) => e.toString()).toList()) ?? <String>[];
-                    final url = await _profileService.uploadProfileMedia(userId: _currentUser!.id, file: File(video.path));
-                    await _profileService.upsertProfile(userId: _currentUser!.id, mediaUrls: [...existing, url]);
-                    await _loadProfileData();
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Video added')));
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to add video: $e')));
-                    }
-                  } finally {
-                    if (mounted) setState(() => _saving = false);
-                  }
-                },
+              GestureDetector(
+                onTap: _openEditProfile,
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFF3F3F3),
+                    image: imageUrl.isNotEmpty
+                        ? DecorationImage(
+                            image: NetworkImage(imageUrl),
+                            fit: BoxFit.cover,
+                          )
+                        : null,
+                  ),
+                  child: imageUrl.isEmpty
+                      ? const Icon(Icons.person, size: 36, color: Color(0xFF9A9A9A))
+                      : null,
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2B2B2B),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '$completion%',
+                    style: AppFonts.geist(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  void _showEditSheet(String label, String fieldKey, String initialValue,
-      {bool isNumber = false, bool isList = false}) {
-    final controller = TextEditingController(text: initialValue);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-            top: 16,
-          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Edit $label',
-                style: GoogleFonts.inter(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF1F1F1F),
+                _getDisplayName(),
+                style: AppFonts.geist(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
+                  letterSpacing: -0.3,
                 ),
               ),
               const SizedBox(height: 12),
-              TextField(
-                controller: controller,
-                keyboardType:
-                    isNumber ? TextInputType.number : TextInputType.text,
-                decoration: InputDecoration(
-                  hintText: label,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+              OutlinedButton(
+                onPressed: _openEditProfile,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.black,
+                  side: const BorderSide(color: Color(0xFFD0D0D0)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
                   ),
-                  focusedBorder: const OutlineInputBorder(
-                    borderSide: BorderSide(color: Color(0xFF6B46C1)),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
                 ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () async {
-                    final rawValue = controller.text.trim();
-                    Navigator.of(context).pop();
-                    await _saveField(fieldKey, rawValue,
-                        isNumber: isNumber, isList: isList);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6B46C1),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Save',
-                    style: TextStyle(color: Colors.white),
+                child: Text(
+                  completion >= 100 ? 'Edit profile' : 'Complete profile',
+                  style: AppFonts.geist(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 
-  Future<void> _saveField(String fieldKey, String rawValue,
-      {bool isNumber = false, bool isList = false}) async {
-    if (_currentUser == null) return;
-    setState(() => _saving = true);
-    try {
-      // Prepare value
-      dynamic valueToSave = rawValue;
-      if (isList) {
-        valueToSave = rawValue
-            .split(',')
-            .map((e) => e.trim())
-            .where((e) => e.isNotEmpty)
-            .toList();
-      } else if (isNumber) {
-        valueToSave = int.tryParse(rawValue);
-      }
-
-      switch (fieldKey) {
-        case 'first_name':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, firstName: valueToSave as String?);
-          break;
-        case 'last_name':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, lastName: valueToSave as String?);
-          break;
-        case 'pronouns':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, pronouns: (valueToSave as List).cast<String>());
-          break;
-        case 'gender':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, gender: valueToSave as String?);
-          break;
-        case 'sexuality':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, sexuality: valueToSave as String?);
-          break;
-        case 'dating_preference':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, datingPreference: (valueToSave as List).cast<String>());
-          break;
-        case 'dating_intention':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, datingIntention: valueToSave as String?);
-          break;
-        case 'relationship_type':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, relationshipType: (valueToSave as List).cast<String>());
-          break;
-        case 'location':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, location: valueToSave as String?);
-          break;
-        case 'hometown':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, hometown: valueToSave as String?);
-          break;
-        case 'height_cm':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, heightCm: valueToSave as int?);
-          break;
-        case 'ethnicity':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, ethnicity: (valueToSave as List).cast<String>());
-          break;
-        case 'education':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, education: valueToSave as String?);
-          break;
-        case 'education_level':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, educationLevel: valueToSave as String?);
-          break;
-        case 'work':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, work: valueToSave as String?);
-          break;
-        case 'job_title':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, jobTitle: valueToSave as String?);
-          break;
-        case 'religious_beliefs':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, religiousBeliefs: (valueToSave as List).cast<String>());
-          break;
-        case 'political_beliefs':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, politicalBeliefs: valueToSave as String?);
-          break;
-        case 'drinking_status':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, drinkingStatus: valueToSave as String?);
-          break;
-        case 'smoking_status':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, smokingStatus: valueToSave as String?);
-          break;
-        case 'weed_status':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, weedStatus: valueToSave as String?);
-          break;
-        case 'drug_status':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, drugStatus: valueToSave as String?);
-          break;
-        case 'children_status':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, childrenStatus: valueToSave as String?);
-          break;
-        case 'bio':
-          await _profileService.upsertProfile(
-              userId: _currentUser!.id, bio: valueToSave as String?);
-          break;
-        default:
-          break;
-      }
-
-      await _loadProfileData();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Failed to save: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+  Widget _buildCategoryBar() {
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _categories.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          final selected = _selectedCategory == index;
+          return GestureDetector(
+            onTap: () => setState(() => _selectedCategory = index),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              decoration: BoxDecoration(
+                color: selected ? Colors.black : Colors.transparent,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: selected ? Colors.black : const Color(0xFFD8D8D8),
+                ),
+              ),
+              child: Text(
+                _categories[index],
+                style: AppFonts.geist(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? Colors.white : Colors.black,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
-  Future<void> _saveVisibility(String visibleKey, bool newValue) async {
-    if (_currentUser == null) return;
-    setState(() => _saving = true);
-    try {
-      switch (visibleKey) {
-        case 'pronouns_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, pronounsVisible: newValue);
-          break;
-        case 'gender_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, genderVisible: newValue);
-          break;
-        case 'sexuality_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, sexualityVisible: newValue);
-          break;
-        case 'dating_intention_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, datingIntentionVisible: newValue);
-          break;
-        case 'relationship_type_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, relationshipTypeVisible: newValue);
-          break;
-        case 'ethnicity_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, ethnicityVisible: newValue);
-          break;
-        case 'children_status_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, childrenStatusVisible: newValue);
-          break;
-        case 'family_plans_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, familyPlansVisible: newValue);
-          break;
-        case 'hometown_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, hometownVisible: newValue);
-          break;
-        case 'work_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, workVisible: newValue);
-          break;
-        case 'job_title_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, jobTitleVisible: newValue);
-          break;
-        case 'education_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, educationVisible: newValue);
-          break;
-        case 'education_level_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, educationLevelVisible: newValue);
-          break;
-        case 'religious_beliefs_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, religiousBeliefsVisible: newValue);
-          break;
-        case 'political_beliefs_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, politicalBeliefsVisible: newValue);
-          break;
-        case 'drinking_status_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, drinkingStatusVisible: newValue);
-          break;
-        case 'smoking_status_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, smokingStatusVisible: newValue);
-          break;
-        case 'weed_status_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, weedStatusVisible: newValue);
-          break;
-        case 'drug_status_visible':
-          await _profileService.upsertProfile(userId: _currentUser!.id, drugStatusVisible: newValue);
-          break;
-        default:
-          break;
-      }
-      await _loadProfileData();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update visibility: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+  Widget _buildActionCards() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => showSpotlightSheet(context),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFD447),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: Colors.black,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.auto_awesome,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Spotlight',
+                textAlign: TextAlign.center,
+                style: AppFonts.geist(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Stand out',
+                textAlign: TextAlign.center,
+                style: AppFonts.geist(
+                  fontSize: 13,
+                  color: const Color(0xFF4A4A4A),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  Future<void> _saveBoolean(String boolKey, bool newValue) async {
-    if (_currentUser == null) return;
-    setState(() => _saving = true);
-    try {
-      switch (boolKey) {
-        case 'notifications_enabled':
-          await _profileService.upsertProfile(userId: _currentUser!.id, notificationsEnabled: newValue);
-          break;
-        default:
-          break;
-      }
-      await _loadProfileData();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update setting: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+  Widget _buildPromoCarousel() {
+    return SizedBox(
+      height: 268,
+      child: PageView(
+        controller: _promoController,
+        children: [
+          _buildPremiumCard(
+            badge: 'RIZZMAX',
+            color: const Color(0xFFFFD447),
+            text:
+                'Get the VIP treatment with priority visibility, advanced AI, and exclusive perks.',
+            buttonLabel: 'Explore RizzMax',
+            onExplore: () => setState(() => _isRizzMaxSelected = true),
+          ),
+          _buildPremiumCard(
+            badge: 'RIZZ+',
+            color: Colors.white,
+            text:
+                'Unlimited likes, matches, and messaging — plus AI tools to level up your profile.',
+            buttonLabel: 'Explore Rizz+',
+            bordered: true,
+            onExplore: () => setState(() => _isRizzMaxSelected = false),
+          ),
+        ],
+      ),
+    );
   }
+
+  Widget _buildPremiumCard({
+    required String badge,
+    required Color color,
+    required String text,
+    required String buttonLabel,
+    VoidCallback? onExplore,
+    bool bordered = false,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+        border: bordered ? Border.all(color: const Color(0xFFE0E0E0)) : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Transform.rotate(
+            angle: -0.08,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              color: Colors.black,
+              child: Text(
+                badge,
+                style: AppFonts.geist(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  fontStyle: FontStyle.italic,
+                  color: bordered ? Colors.white : const Color(0xFFFFD447),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Expanded(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                text,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: AppFonts.geist(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
+                  height: 1.25,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: onExplore,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+              ),
+              child: Text(
+                buttonLabel,
+                style: AppFonts.geist(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeatureComparison() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 12,
+          runSpacing: 8,
+          children: [
+            Text(
+              'What you get:',
+              style: AppFonts.geist(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.black,
+              ),
+            ),
+            _buildPlanToggle('Rizz+', !_isRizzMaxSelected, () {
+              setState(() => _isRizzMaxSelected = false);
+            }),
+            _buildPlanToggle('RizzMax', _isRizzMaxSelected, () {
+              setState(() => _isRizzMaxSelected = true);
+            }),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (!_isRizzMaxSelected) ...[
+          Text(
+            _rizzPlusTagline,
+            style: AppFonts.geist(
+              fontSize: 14,
+              color: const Color(0xFF6B6B6B),
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ..._rizzPlusFeatures.map(_buildFeatureRow),
+        ] else ...[
+          Text(
+            'Everything in Rizz+ plus:',
+            style: AppFonts.geist(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 16),
+          for (final section in _rizzMaxSections) ...[
+            _buildFeatureSectionHeader(section.title),
+            ...section.features.map(_buildFeatureRow),
+            const SizedBox(height: 8),
+          ],
+        ],
+      ],
+    );
+  }
+
+  Widget _buildFeatureSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8, top: 4),
+      child: Text(
+        title,
+        style: AppFonts.geist(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF6B46C1),
+          letterSpacing: 0.2,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlanToggle(String label, bool active, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Text(
+        label,
+        style: AppFonts.geist(
+          fontSize: 16,
+          fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+          color: active ? Colors.black : const Color(0xFFB0B0B0),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureRow(String feature) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 18),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFECECEC)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    feature,
+                    style: AppFonts.geist(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(Icons.info_outline, size: 18, color: Colors.grey[500]),
+              ],
+            ),
+          ),
+          const Icon(Icons.check, color: Colors.black, size: 24),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlanFeatureSection {
+  final String title;
+  final List<String> features;
+
+  const _PlanFeatureSection({
+    required this.title,
+    required this.features,
+  });
 }

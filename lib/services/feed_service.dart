@@ -1,9 +1,12 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:developer' as developer;
 import '../models/user.dart' as app_user;
+import '../models/user_match.dart';
+import 'match_service.dart';
 
 class FeedService {
   final _supabase = Supabase.instance.client;
+  final MatchService _matchService = MatchService();
 
   /// Private helper to execute Supabase calls with standardized error handling.
   Future<T> _guardedCall<T>(Future<T> Function() function) async {
@@ -32,17 +35,8 @@ class FeedService {
 
         developer.log('Fetching potential matches for user: $currentUserId');
 
-        // Get current user's profile to filter matches
-        final currentUserResponse = await _supabase
-            .from('profiles')
-            .select()
-            .eq('id', currentUserId)
-            .single();
+        final swipedIds = await _matchService.getSwipedUserIds();
 
-        // currentUserResponse is already checked by the single() call
-        // We could use this for filtering matches in the future
-        
-        // Build query to get potential matches
         var query = _supabase
             .from('profiles')
             .select()
@@ -73,6 +67,9 @@ class FeedService {
         
         for (final profile in response) {
           try {
+            final profileId = profile['id'] as String;
+            if (swipedIds.contains(profileId)) continue;
+
             // Try the full mapping first
             final user = app_user.User.fromMap(profile);
             users.add(user);
@@ -99,36 +96,23 @@ class FeedService {
     });
   }
 
-  /// Records a swipe action (like or pass)
-  Future<void> recordSwipe({
+  /// Records a swipe action. Returns a match when both users liked each other.
+  Future<UserMatch?> recordSwipe({
     required String targetUserId,
     required bool isLike,
     String? superLike,
   }) async {
     return _guardedCall(() async {
       try {
-        final currentUserId = _supabase.auth.currentUser?.id;
-        if (currentUserId == null) {
-          throw Exception('User not authenticated');
-        }
+        developer.log(
+          'Recording swipe -> $targetUserId (like: $isLike)',
+        );
 
-        developer.log('Recording swipe: $currentUserId -> $targetUserId (like: $isLike)');
-
-        // In a real app, you'd have a swipes table to track interactions
-        // For now, we'll just log the action
-        // You could create a swipes table with columns:
-        // id, swiper_id, target_id, action (like/pass/super_like), created_at
-        
-        // Example implementation:
-        // await _supabase.from('swipes').insert({
-        //   'swiper_id': currentUserId,
-        //   'target_id': targetUserId,
-        //   'action': isLike ? 'like' : 'pass',
-        //   'super_like': superLike ?? false,
-        //   'created_at': DateTime.now().toIso8601String(),
-        // });
-
-        developer.log('Swipe recorded successfully');
+        return await _matchService.recordSwipe(
+          targetUserId: targetUserId,
+          isLike: isLike,
+          superLike: superLike == 'true',
+        );
       } catch (e) {
         developer.log('Error recording swipe: $e');
         rethrow;
