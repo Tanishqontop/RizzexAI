@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:rizzexai/theme/app_typography.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
+import '../widgets/love_loading_view.dart';
 import 'auth_wrapper.dart';
 
-/// Branded splash shown on app launch while Supabase initializes.
+/// Initializes Supabase then hands off to [AuthWrapper].
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -15,8 +15,6 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   bool _ready = false;
   String? _error;
-
-  static const _minSplashDuration = Duration(milliseconds: 1800);
   static bool _supabaseInitialized = false;
 
   @override
@@ -26,8 +24,6 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _bootstrap() async {
-    final started = DateTime.now();
-
     try {
       if (!_supabaseInitialized) {
         await Supabase.initialize(
@@ -42,12 +38,6 @@ class _SplashScreenState extends State<SplashScreen> {
         setState(() => _error = e.toString());
       }
       return;
-    }
-
-    final elapsed = DateTime.now().difference(started);
-    final remaining = _minSplashDuration - elapsed;
-    if (remaining > Duration.zero) {
-      await Future.delayed(remaining);
     }
 
     if (mounted) {
@@ -73,9 +63,9 @@ class _SplashScreenState extends State<SplashScreen> {
                 children: [
                   const Icon(Icons.error_outline, color: Colors.black54, size: 48),
                   const SizedBox(height: 16),
-                  Text(
+                  const Text(
                     'Could not start the app',
-                    style: AppFonts.geist(
+                    style: TextStyle(
                       color: Colors.black87,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
@@ -85,7 +75,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   const SizedBox(height: 8),
                   Text(
                     _error!,
-                    style: AppFonts.geist(
+                    style: const TextStyle(
                       color: Colors.black54,
                       fontSize: 14,
                     ),
@@ -114,26 +104,6 @@ class _SplashScreenState extends State<SplashScreen> {
       );
     }
 
-    return const SplashView();
-  }
-}
-
-/// Reusable splash layout (also used while auth state resolves).
-class SplashView extends StatelessWidget {
-  const SplashView({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.white,
-      body: Center(
-        child: Image(
-          image: AssetImage('assets/icon/app_icon.png'),
-          width: 120,
-          height: 120,
-          fit: BoxFit.contain,
-        ),
-      ),
-    );
+    return const LoveLoadingView();
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Import Supabase
 import '../services/profile_service.dart'; // NEW: Import ProfileService
+import '../widgets/onboarding_skip_button.dart';
 import 'profile_details_screen.dart';
 
 class NotificationPromptScreen extends StatefulWidget {
@@ -57,6 +58,15 @@ class _NotificationPromptScreenState extends State<NotificationPromptScreen> {
     // Note: We don't turn off loading on success because the screen is removed
   }
 
+  void _skipAndContinue() {
+    if (!mounted || _isLoading) return;
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const ProfileDetailsScreen()),
+      (route) => false,
+    );
+  }
+
   // Your dialog now just confirms the choice before calling the save function
   void _showDisableConfirmation() {
     showDialog(
@@ -93,7 +103,10 @@ class _NotificationPromptScreenState extends State<NotificationPromptScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Padding(
+        child: OnboardingSkipLayout(
+          onSkip: _skipAndContinue,
+          skipEnabled: !_isLoading,
+          child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             children: [
@@ -171,6 +184,7 @@ class _NotificationPromptScreenState extends State<NotificationPromptScreen> {
               const SizedBox(height: 24),
             ],
           ),
+        ),
         ),
       ),
     );

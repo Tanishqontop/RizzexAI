@@ -96,6 +96,75 @@ class FeedService {
     });
   }
 
+  /// Fetches browseable profiles for Discover (completed profiles with photos).
+  /// Unlike the feed, only excludes passes — likes/super likes stay visible here.
+  Future<List<app_user.User>> getDiscoverProfiles({
+    int limit = 36,
+  }) async {
+    return _guardedCall(() async {
+      final currentUserId = _supabase.auth.currentUser?.id;
+      if (currentUserId == null) {
+        throw Exception('User not authenticated');
+      }
+
+      developer.log('Fetching discover profiles for user: $currentUserId');
+
+      final passedIds = await _matchService.getPassedUserIds();
+      final users = <app_user.User>[];
+      var offset = 0;
+      const pageSize = 40;
+
+      while (users.length < limit) {
+        final response = await _supabase
+            .from('profiles')
+            .select()
+            .neq('id', currentUserId)
+            .order('updated_at', ascending: false)
+            .range(offset, offset + pageSize - 1);
+
+        if (response.isEmpty) break;
+
+        for (final profile in response) {
+          final profileId = profile['id'] as String;
+          if (passedIds.contains(profileId)) continue;
+
+          final user = _mapProfile(profile);
+          if (user == null || !_isDiscoverable(user)) continue;
+
+          users.add(user);
+          if (users.length >= limit) break;
+        }
+
+        if (response.length < pageSize) break;
+        offset += pageSize;
+      }
+
+      developer.log('Discover profiles ready: ${users.length}');
+      return users;
+    });
+  }
+
+  app_user.User? _mapProfile(Map<String, dynamic> profile) {
+    try {
+      return app_user.User.fromMap(profile);
+    } catch (e) {
+      developer.log('Error mapping profile with full fields: $e');
+      try {
+        return app_user.User.fromBasicMap(profile);
+      } catch (e2) {
+        developer.log('Error mapping profile with basic fields: $e2');
+        return null;
+      }
+    }
+  }
+
+  bool _isDiscoverable(app_user.User user) {
+    final hasName = (user.firstName?.trim().isNotEmpty ?? false) ||
+        (user.lastName?.trim().isNotEmpty ?? false) ||
+        (user.username?.trim().isNotEmpty ?? false);
+    return hasName && user.allPhotos.isNotEmpty;
+  }
+
   /// Records a swipe action. Returns a match when both users liked each other.
   Future<UserMatch?> recordSwipe({
     required String targetUserId,
@@ -117,6 +186,19 @@ class FeedService {
         developer.log('Error recording swipe: $e');
         rethrow;
       }
+    });
+  }
+
+  /// Undoes the last swipe on a profile (used by Feed rewind).
+  Future<void> rewindSwipe({
+    required String targetUserId,
+    String? matchIdToRemove,
+  }) async {
+    return _guardedCall(() async {
+      await _matchService.rewindSwipe(
+        targetUserId: targetUserId,
+        matchIdToRemove: matchIdToRemove,
+      );
     });
   }
 

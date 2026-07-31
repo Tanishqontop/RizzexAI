@@ -8,6 +8,8 @@ class UserMatch {
   final DateTime createdAt;
   final String? lastMessage;
   final DateTime? lastMessageAt;
+  final bool receivedSuperLike;
+  final DateTime? superLikeAt;
 
   UserMatch({
     required this.id,
@@ -17,7 +19,11 @@ class UserMatch {
     required this.createdAt,
     this.lastMessage,
     this.lastMessageAt,
-  });
+    bool? receivedSuperLike,
+    this.superLikeAt,
+  }) : receivedSuperLike = receivedSuperLike ?? false;
+
+  bool get hasReceivedSuperLike => receivedSuperLike;
 
   String otherUserId(String currentUserId) {
     return currentUserId == user1Id ? user2Id : user1Id;

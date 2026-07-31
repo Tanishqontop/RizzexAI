@@ -2,9 +2,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:developer' as developer;
 import '../models/user.dart' as app_user;
 import '../models/user_match.dart';
+import 'super_like_service.dart';
 
 class MatchService {
   final _supabase = Supabase.instance.client;
+  final SuperLikeService _superLikeService = SuperLikeService();
 
   String? get _currentUserId => _supabase.auth.currentUser?.id;
 
@@ -17,6 +19,12 @@ class MatchService {
     final currentUserId = _currentUserId;
     if (currentUserId == null) {
       throw Exception('User not authenticated');
+    }
+
+    if (superLike) {
+      await _superLikeService.ensureCanSendSuperLike(
+        targetUserId: targetUserId,
+      );
     }
 
     final action = superLike
@@ -80,6 +88,7 @@ class MatchService {
         user2Id: user2Id,
         matchedUser: profile,
         createdAt: DateTime.parse(existing['created_at'] as String),
+        receivedSuperLike: false,
       );
     }
 
@@ -101,6 +110,7 @@ class MatchService {
       user2Id: user2Id,
       matchedUser: profile,
       createdAt: DateTime.parse(inserted['created_at'] as String),
+      receivedSuperLike: false,
     );
   }
 
@@ -114,6 +124,8 @@ class MatchService {
         .or('user1_id.eq.$currentUserId,user2_id.eq.$currentUserId')
         .order('created_at', ascending: false);
 
+    final superLikeTimes = await _loadSuperLikeTimes();
+
     final matches = <UserMatch>[];
     for (final row in response as List) {
       final user1Id = row['user1_id'] as String;
@@ -125,20 +137,14 @@ class MatchService {
       final profile = await _fetchProfile(otherUserId);
       if (profile == null) continue;
 
-      final lastMsg = await _supabase
-          .from('messages')
-          .select('content, created_at, message_type, view_once')
-          .eq('match_id', matchId)
-          .order('created_at', ascending: false)
-          .limit(1)
-          .maybeSingle();
+      final lastMsg = await _fetchLastMessage(matchId);
 
       String? lastMessagePreview;
       if (lastMsg != null) {
         final type = lastMsg['message_type'] as String? ?? 'text';
         final content = lastMsg['content'] as String? ?? '';
         if (type == 'image') {
-          final viewOnce = lastMsg['view_once'] as bool? ?? false;
+          final viewOnce = _parseBool(lastMsg['view_once']);
           lastMessagePreview = content.isNotEmpty
               ? '📷 $content'
               : viewOnce
@@ -148,6 +154,8 @@ class MatchService {
           lastMessagePreview = content.isNotEmpty ? content : null;
         }
       }
+
+      final superLikeAt = superLikeTimes[otherUserId];
 
       matches.add(UserMatch(
         id: matchId,
@@ -159,16 +167,73 @@ class MatchService {
         lastMessageAt: lastMsg?['created_at'] != null
             ? DateTime.parse(lastMsg!['created_at'] as String)
             : null,
+        receivedSuperLike: superLikeAt != null,
+        superLikeAt: superLikeAt,
       ));
     }
 
     matches.sort((a, b) {
+      if (a.hasReceivedSuperLike != b.hasReceivedSuperLike) {
+        return a.hasReceivedSuperLike ? -1 : 1;
+      }
+      if (a.hasReceivedSuperLike && b.hasReceivedSuperLike) {
+        final aSuper = a.superLikeAt ?? a.createdAt;
+        final bSuper = b.superLikeAt ?? b.createdAt;
+        final superCompare = bSuper.compareTo(aSuper);
+        if (superCompare != 0) return superCompare;
+      }
       final aTime = a.lastMessageAt ?? a.createdAt;
       final bTime = b.lastMessageAt ?? b.createdAt;
       return bTime.compareTo(aTime);
     });
 
     return matches;
+  }
+
+  Future<Map<String, DateTime>> _loadSuperLikeTimes() async {
+    try {
+      return await _superLikeService.getSuperLikeTimestampsBySwiper();
+    } catch (e) {
+      developer.log('Could not load super like timestamps: $e');
+      return {};
+    }
+  }
+
+  Future<Map<String, dynamic>?> _fetchLastMessage(String matchId) async {
+    try {
+      return await _supabase
+          .from('messages')
+          .select('content, created_at, message_type, view_once')
+          .eq('match_id', matchId)
+          .order('created_at', ascending: false)
+          .limit(1)
+          .maybeSingle();
+    } catch (e) {
+      developer.log('Last message query failed, retrying without view_once: $e');
+      try {
+        return await _supabase
+            .from('messages')
+            .select('content, created_at, message_type')
+            .eq('match_id', matchId)
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+      } catch (e2) {
+        developer.log('Could not load last message for match $matchId: $e2');
+        return null;
+      }
+    }
+  }
+
+  bool _parseBool(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final normalized = value.toLowerCase();
+      return normalized == 'true' || normalized == 't' || normalized == '1';
+    }
+    return false;
   }
 
   Future<List<String>> getSwipedUserIds() async {
@@ -179,6 +244,43 @@ class MatchService {
         .from('swipes')
         .select('target_id')
         .eq('swiper_id', currentUserId);
+
+    return (response as List)
+        .map((row) => row['target_id'] as String)
+        .toList();
+  }
+
+  /// Removes the current user's swipe on [targetUserId] and optionally the match.
+  Future<void> rewindSwipe({
+    required String targetUserId,
+    String? matchIdToRemove,
+  }) async {
+    final currentUserId = _currentUserId;
+    if (currentUserId == null) {
+      throw Exception('User not authenticated');
+    }
+
+    if (matchIdToRemove != null) {
+      await _supabase.from('matches').delete().eq('id', matchIdToRemove);
+    }
+
+    await _supabase
+        .from('swipes')
+        .delete()
+        .eq('swiper_id', currentUserId)
+        .eq('target_id', targetUserId);
+  }
+
+  /// Users the current user explicitly passed on (still eligible for Discover).
+  Future<List<String>> getPassedUserIds() async {
+    final currentUserId = _currentUserId;
+    if (currentUserId == null) return [];
+
+    final response = await _supabase
+        .from('swipes')
+        .select('target_id')
+        .eq('swiper_id', currentUserId)
+        .eq('action', 'pass');
 
     return (response as List)
         .map((row) => row['target_id'] as String)

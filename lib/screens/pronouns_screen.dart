@@ -2,6 +2,7 @@ import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Import Supabase
 import '../services/profile_service.dart'; // NEW: Import ProfileService
+import '../widgets/onboarding_skip_button.dart';
 import 'gender_screen.dart';
 
 class PronounsScreen extends StatefulWidget {
@@ -71,6 +72,14 @@ class _PronounsScreenState extends State<PronounsScreen> {
     }
   }
 
+  void _skipAndContinue() {
+    if (!mounted || _loading) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const GenderScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool hasSelection = _selected.isNotEmpty;
@@ -78,7 +87,10 @@ class _PronounsScreenState extends State<PronounsScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Stack(
+        child: OnboardingSkipLayout(
+          onSkip: _skipAndContinue,
+          skipEnabled: !_loading,
+          child: Stack(
           children: [
             ListView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -189,6 +201,7 @@ class _PronounsScreenState extends State<PronounsScreen> {
               ),
             )
           ],
+        ),
         ),
       ),
     );

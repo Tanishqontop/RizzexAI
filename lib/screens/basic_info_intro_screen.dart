@@ -1,5 +1,6 @@
 import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
+import '../widgets/onboarding_skip_button.dart';
 import 'name_entry_screen.dart';
 
 class BasicInfoIntroScreen extends StatelessWidget {
@@ -9,7 +10,14 @@ class BasicInfoIntroScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7FB),
       body: SafeArea(
-        child: Column(
+        child: OnboardingSkipLayout(
+          onSkip: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NameEntryScreen()),
+            );
+          },
+          child: Column(
           children: [
             // Main content centered
             Expanded(
@@ -87,6 +95,7 @@ class BasicInfoIntroScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

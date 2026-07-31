@@ -4,11 +4,16 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_match.dart';
 import '../models/compliment.dart';
+import '../models/received_super_like.dart';
+import '../models/user.dart' as app_user;
 import '../services/match_service.dart';
 import '../services/compliment_service.dart';
+import '../services/super_like_service.dart';
 import '../services/profile_service.dart';
+import '../services/feed_service.dart';
 import '../widgets/match_dialog.dart';
 import '../widgets/compliment_sheet.dart';
+import '../widgets/discover_profile_modal.dart';
 import '../widgets/spotlight_sheet.dart';
 import 'conversation_screen.dart';
 
@@ -22,10 +27,13 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final MatchService _matchService = MatchService();
   final ComplimentService _complimentService = ComplimentService();
+  final SuperLikeService _superLikeService = SuperLikeService();
   final ProfileService _profileService = ProfileService();
+  final FeedService _feedService = FeedService();
 
   List<UserMatch> _matches = [];
   List<Compliment> _pendingCompliments = [];
+  List<ReceivedSuperLike> _receivedSuperLikes = [];
   String? _currentUserAvatarUrl;
   bool _isLoading = true;
   bool _olderChatsExpanded = false;
@@ -47,17 +55,23 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
+      final profileFuture = userId != null
+          ? _profileService.getProfile(userId)
+          : Future<Map<String, dynamic>?>.value(null);
+
       final results = await Future.wait([
         _matchService.getMatches(),
         _complimentService.getPendingReceivedCompliments(),
-        if (userId != null) _profileService.getProfile(userId) else Future.value(null),
+        _superLikeService.getReceivedSuperLikes().catchError((_) => <ReceivedSuperLike>[]),
+        profileFuture,
       ]);
 
       if (mounted) {
-        final profile = results[2] as Map<String, dynamic>?;
+        final profile = results[3] as Map<String, dynamic>?;
         setState(() {
           _matches = results[0] as List<UserMatch>;
           _pendingCompliments = results[1] as List<Compliment>;
+          _receivedSuperLikes = results[2] as List<ReceivedSuperLike>;
           _currentUserAvatarUrl = _resolveAvatarUrl(profile);
           _isLoading = false;
         });
@@ -101,6 +115,40 @@ class _ChatScreenState extends State<ChatScreen> {
 
   List<UserMatch> get _olderMatches =>
       _matches.where((m) => _isExpired(m)).toList();
+
+  List<ReceivedSuperLike> get _unmatchedSuperLikes {
+    final matchedIds = _matches.map((m) => m.matchedUser.id).toSet();
+    return _receivedSuperLikes
+        .where((item) => !matchedIds.contains(item.swiperId))
+        .toList();
+  }
+
+  Future<void> _likeBackFromSuperLike(app_user.User user) async {
+    try {
+      final match = await _feedService.recordSwipe(
+        targetUserId: user.id,
+        isLike: true,
+      );
+      await _loadAll();
+      if (match != null && mounted) {
+        await showMatchDialog(context, match);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        );
+      }
+    }
+  }
+
+  void _openSuperLikeProfile(ReceivedSuperLike superLike) {
+    showDiscoverProfileModal(
+      context: context,
+      user: superLike.swiper,
+      onLike: () => _likeBackFromSuperLike(superLike.swiper),
+    );
+  }
 
   void _openConversation(UserMatch match) async {
     await Navigator.of(context).push(
@@ -207,9 +255,16 @@ class _ChatScreenState extends State<ChatScreen> {
           const SizedBox(height: 28),
           _buildChatsSectionHeader(),
           const SizedBox(height: 8),
-          if (_matches.isEmpty && _pendingCompliments.isEmpty)
+          if (_matches.isEmpty &&
+              _pendingCompliments.isEmpty &&
+              _unmatchedSuperLikes.isEmpty)
             _buildEmptyChats()
           else ...[
+            if (_unmatchedSuperLikes.isNotEmpty) ...[
+              _buildSuperLikesHeader(),
+              ..._unmatchedSuperLikes.map(_buildSuperLikeTile),
+              const SizedBox(height: 12),
+            ],
             ..._pendingCompliments.map(_buildComplimentTile),
             ..._recentMatches.map((m) => _buildChatTile(m, expired: false)),
             if (_olderMatches.isNotEmpty) ...[
@@ -409,6 +464,48 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  Widget _buildSuperLikesHeader() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFC629),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.star, size: 16, color: Colors.black),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Super Likes',
+            style: AppFonts.geist(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuperLikeTile(ReceivedSuperLike superLike) {
+    final user = superLike.swiper;
+    final photoUrl = _photoUrlForUser(user.avatarUrl, user.profilePhotos);
+
+    return _buildChatRow(
+      photoUrl: photoUrl,
+      name: user.displayName,
+      subtitle: 'Super Liked you',
+      expired: false,
+      highlight: true,
+      onTap: () => _openSuperLikeProfile(superLike),
+    );
+  }
+
   Widget _buildComplimentTile(Compliment compliment) {
     final sender = compliment.sender;
     final photoUrl = _photoUrlForUser(sender?.avatarUrl, sender?.profilePhotos);
@@ -429,8 +526,11 @@ class _ChatScreenState extends State<ChatScreen> {
     return _buildChatRow(
       photoUrl: photoUrl,
       name: user.displayName,
-      subtitle: _subtitleForMatch(match),
+      subtitle: match.hasReceivedSuperLike
+          ? 'Super Liked you · ${_subtitleForMatch(match)}'
+          : _subtitleForMatch(match),
       expired: expired,
+      highlight: match.hasReceivedSuperLike,
       onTap: () => _openConversation(match),
     );
   }
@@ -449,6 +549,7 @@ class _ChatScreenState extends State<ChatScreen> {
     required String subtitle,
     required bool expired,
     required VoidCallback onTap,
+    bool highlight = false,
   }) {
     return InkWell(
       onTap: onTap,
@@ -456,27 +557,47 @@ class _ChatScreenState extends State<ChatScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         child: Row(
           children: [
-            Container(
-              padding: expired ? const EdgeInsets.all(3) : EdgeInsets.zero,
-              decoration: expired
-                  ? BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFFBDBDBD),
-                        width: 2.5,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  padding: expired ? const EdgeInsets.all(3) : EdgeInsets.zero,
+                  decoration: expired
+                      ? BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFFBDBDBD),
+                            width: 2.5,
+                          ),
+                        )
+                      : null,
+                  child: CircleAvatar(
+                    radius: 28,
+                    backgroundColor: const Color(0xFFF0F0F0),
+                    backgroundImage: photoUrl != null
+                        ? CachedNetworkImageProvider(photoUrl)
+                        : null,
+                    child: photoUrl == null
+                        ? const Icon(Icons.person, color: Color(0xFF9A9A9A))
+                        : null,
+                  ),
+                ),
+                if (highlight)
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFC629),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 2),
                       ),
-                    )
-                  : null,
-              child: CircleAvatar(
-                radius: 28,
-                backgroundColor: const Color(0xFFF0F0F0),
-                backgroundImage: photoUrl != null
-                    ? CachedNetworkImageProvider(photoUrl)
-                    : null,
-                child: photoUrl == null
-                    ? const Icon(Icons.person, color: Color(0xFF9A9A9A))
-                    : null,
-              ),
+                      child: const Icon(Icons.star, size: 12, color: Colors.black),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(width: 14),
             Expanded(

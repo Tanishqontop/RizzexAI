@@ -1,11 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:rizzexai/theme/app_typography.dart';
 import '../models/user.dart';
+import '../models/user_match.dart';
+import '../widgets/love_loading_view.dart';
 import '../services/feed_service.dart';
 import '../widgets/swipeable_card_stack.dart';
 import '../widgets/match_dialog.dart';
 import '../widgets/compliment_sheet.dart';
 import '../services/compliment_service.dart';
+import '../services/super_like_service.dart';
 import 'dart:developer' as developer;
+
+class _FeedSwipeRecord {
+  final User user;
+  final SwipeDirection direction;
+  final UserMatch? match;
+
+  const _FeedSwipeRecord({
+    required this.user,
+    required this.direction,
+    this.match,
+  });
+}
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -17,14 +33,17 @@ class FeedScreen extends StatefulWidget {
 class _FeedScreenState extends State<FeedScreen> {
   final FeedService _feedService = FeedService();
   final ComplimentService _complimentService = ComplimentService();
+  final SuperLikeService _superLikeService = SuperLikeService();
   List<User> _users = [];
   User? _currentUser;
   bool _isLoading = true;
-  bool _isRefreshing = false;
   String? _error;
   int _remainingCompliments = ComplimentService.dailyLimit;
+  int _remainingSuperLikes = SuperLikeService.weeklyLimit;
   int _swipedCount = 0;
-  Key _feedStackKey = UniqueKey();
+  int _currentIndex = 0;
+  final List<_FeedSwipeRecord> _swipeHistory = [];
+  bool _isRewinding = false;
 
   @override
   void initState() {
@@ -32,6 +51,18 @@ class _FeedScreenState extends State<FeedScreen> {
     _loadCurrentUser();
     _loadUsers();
     _loadComplimentQuota();
+    _loadSuperLikeQuota();
+  }
+
+  Future<void> _loadSuperLikeQuota() async {
+    try {
+      final remaining = await _superLikeService.getRemainingSuperLikesThisWeek();
+      if (mounted) {
+        setState(() => _remainingSuperLikes = remaining);
+      }
+    } catch (e) {
+      developer.log('Error loading super like quota: $e');
+    }
   }
 
   Future<void> _loadComplimentQuota() async {
@@ -72,7 +103,8 @@ class _FeedScreenState extends State<FeedScreen> {
           _users = users.cast<User>();
           _isLoading = false;
           _swipedCount = 0;
-          _feedStackKey = UniqueKey();
+          _currentIndex = 0;
+          _swipeHistory.clear();
         });
       }
     } catch (e) {
@@ -88,19 +120,16 @@ class _FeedScreenState extends State<FeedScreen> {
 
   Future<void> _refreshFeed() async {
     try {
-      setState(() {
-        _isRefreshing = true;
-        _error = null;
-      });
+      setState(() => _error = null);
 
       final users = await _feedService.refreshFeed();
       
       if (mounted) {
         setState(() {
           _users = users.cast<User>();
-          _isRefreshing = false;
           _swipedCount = 0;
-          _feedStackKey = UniqueKey();
+          _currentIndex = 0;
+          _swipeHistory.clear();
         });
       }
     } catch (e) {
@@ -108,7 +137,6 @@ class _FeedScreenState extends State<FeedScreen> {
       if (mounted) {
         setState(() {
           _error = e.toString();
-          _isRefreshing = false;
         });
       }
     }
@@ -161,28 +189,124 @@ class _FeedScreenState extends State<FeedScreen> {
     );
   }
 
-  void _onSwipe(User user, SwipeDirection direction) async {
+  Future<bool> _onSwipe(User user, SwipeDirection direction) async {
     try {
+      final isSuperLike = direction == SwipeDirection.up;
+      if (isSuperLike && _remainingSuperLikes <= 0) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'You have used all ${SuperLikeService.weeklyLimit} Super Likes for this week',
+              ),
+            ),
+          );
+        }
+        return false;
+      }
+
       final match = await _feedService.recordSwipe(
         targetUserId: user.id,
-        isLike: direction == SwipeDirection.right ||
-            direction == SwipeDirection.up,
-        superLike: direction == SwipeDirection.up ? 'true' : null,
+        isLike: direction == SwipeDirection.right || isSuperLike,
+        superLike: isSuperLike ? 'true' : null,
       );
+
+      if (isSuperLike) {
+        await _loadSuperLikeQuota();
+      }
 
       if (match != null && mounted) {
         await showMatchDialog(context, match);
+      } else if (mounted && isSuperLike) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Super Liked ${user.displayName}!'),
+            backgroundColor: const Color(0xFFFFC629),
+          ),
+        );
       }
 
       if (mounted) {
-        setState(() => _swipedCount++);
+        setState(() {
+          _swipedCount++;
+          _currentIndex++;
+          _swipeHistory.add(
+            _FeedSwipeRecord(
+              user: user,
+              direction: direction,
+              match: match,
+            ),
+          );
+        });
       }
 
-      if (_users.length - _swipedCount < 3) {
+      if (_users.length - _currentIndex < 3) {
         _loadMoreUsers();
       }
+
+      return true;
     } catch (e) {
       developer.log('Error recording swipe: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+          ),
+        );
+      }
+      return false;
+    }
+  }
+
+  Future<void> _rewindLastSwipe() async {
+    if (_isRewinding || _swipeHistory.isEmpty) {
+      if (mounted && _swipeHistory.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nothing to rewind yet')),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isRewinding = true);
+
+    final record = _swipeHistory.removeLast();
+
+    try {
+      await _feedService.rewindSwipe(
+        targetUserId: record.user.id,
+        matchIdToRemove: record.match?.id,
+      );
+
+      if (record.direction == SwipeDirection.up) {
+        await _loadSuperLikeQuota();
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentIndex = (_currentIndex - 1).clamp(0, _users.length);
+        _swipedCount = (_swipedCount - 1).clamp(0, _users.length);
+        _isRewinding = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Rewound ${record.user.displayName}'),
+          backgroundColor: const Color(0xFF6B46C1),
+        ),
+      );
+    } catch (e) {
+      developer.log('Error rewinding swipe: $e');
+      _swipeHistory.add(record);
+      if (mounted) {
+        setState(() => _isRewinding = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
+          ),
+        );
+      }
     }
   }
 
@@ -190,74 +314,48 @@ class _FeedScreenState extends State<FeedScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
+      backgroundColor: const Color(0xFFF3F3F3),
+      body: Column(
         children: [
-          // Main content - now full screen
-          _buildBody(),
-          
-          // Floating header overlay
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.7),
-                      Colors.transparent,
-                    ],
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
+              child: Row(
+                children: [
+                  Text(
+                    'Rizzex',
+                    style: AppFonts.geist(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                      letterSpacing: -0.5,
+                    ),
                   ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.local_fire_department,
-                      color: Colors.white,
-                      size: 28,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Discover',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const Spacer(),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: IconButton(
-                        onPressed: _refreshFeed,
-                        icon: _isRefreshing
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(
-                                Icons.refresh,
-                                color: Colors.white,
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: _swipeHistory.isEmpty || _isRewinding
+                        ? null
+                        : _rewindLastSwipe,
+                    icon: _isRewinding
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(
+                            Icons.replay,
+                            color: _swipeHistory.isEmpty
+                                ? Colors.black26
+                                : Colors.black,
+                          ),
+                    tooltip: 'Rewind',
+                  ),
+                ],
               ),
             ),
           ),
+          Expanded(child: _buildBody()),
         ],
       ),
     );
@@ -265,24 +363,7 @@ class _FeedScreenState extends State<FeedScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              color: Color(0xFF6B46C1),
-            ),
-            SizedBox(height: 16),
-            Text(
-              'Finding your perfect matches...',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      );
+      return const LoveLoadingView();
     }
 
     if (_error != null) {
@@ -383,18 +464,14 @@ class _FeedScreenState extends State<FeedScreen> {
     }
 
     return SwipeableCardStack(
-      key: _feedStackKey,
       users: _users,
+      currentIndex: _currentIndex,
       currentUser: _currentUser,
-      onSwipe: _onSwipe,
+      onSwipeAsync: _onSwipe,
       onCompliment: _sendCompliment,
       remainingCompliments: _remainingCompliments,
-      onEmpty: () {
-        setState(() {
-          _users.clear();
-        });
-        _refreshFeed();
-      },
+      remainingSuperLikes: _remainingSuperLikes,
+      onEmpty: _loadMoreUsers,
     );
   }
 }

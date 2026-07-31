@@ -1,7 +1,8 @@
 import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Import Supabase
-import '../services/profile_service.dart'; // NEW: Import ProfileService
+import '../services/profile_service.dart';
+import '../widgets/onboarding_skip_button.dart';
 import 'highest_level_screen.dart';
 
 class StudyScreen extends StatefulWidget {
@@ -69,6 +70,14 @@ class _StudyScreenState extends State<StudyScreen> {
     }
   }
 
+  void _skipAndContinue() {
+    if (!mounted || _loading) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const HighestLevelScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool hasText = _controller.text.trim().isNotEmpty;
@@ -76,7 +85,10 @@ class _StudyScreenState extends State<StudyScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Stack(
+        child: OnboardingSkipLayout(
+          onSkip: _skipAndContinue,
+          skipEnabled: !_loading,
+          child: Stack(
           children: [
             ListView(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -183,6 +195,7 @@ class _StudyScreenState extends State<StudyScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

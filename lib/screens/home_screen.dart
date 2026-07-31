@@ -20,18 +20,21 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late int _currentIndex;
+  final GlobalKey<DiscoverScreenState> _discoverKey =
+      GlobalKey<DiscoverScreenState>();
 
-  final List<Widget> _screens = const [
-    FeedScreen(),
-    DiscoverScreen(),
-    AIFeaturesScreen(),
-    ChatScreen(),
-    MyProfileScreen(),
-  ];
+  late final List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
+    _screens = [
+      const FeedScreen(),
+      DiscoverScreen(key: _discoverKey),
+      const AIFeaturesScreen(),
+      const ChatScreen(),
+      const MyProfileScreen(),
+    ];
     _currentIndex = widget.initialTabIndex.clamp(0, _screens.length - 1);
   }
 
@@ -52,6 +55,9 @@ class _HomeScreenState extends State<HomeScreen> {
           setState(() {
             _currentIndex = index;
           });
+          if (index == HomeScreen.discoverTabIndex) {
+            _discoverKey.currentState?.refresh();
+          }
         },
         items: const [
           BottomNavigationBarItem(

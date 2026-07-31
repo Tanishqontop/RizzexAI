@@ -1,5 +1,6 @@
 import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
+import '../widgets/onboarding_skip_button.dart';
 import 'pick_media_screen.dart';
 
 class ShowPersonScreen extends StatefulWidget {
@@ -16,7 +17,14 @@ class _ShowPersonScreenState extends State<ShowPersonScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
+        child: OnboardingSkipLayout(
+          onSkip: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PickMediaScreen()),
+            );
+          },
+          child: Column(
           children: [
             Expanded(
               child: Padding(
@@ -72,6 +80,7 @@ class _ShowPersonScreenState extends State<ShowPersonScreen> {
               ),
             )
           ],
+        ),
         ),
       ),
     );

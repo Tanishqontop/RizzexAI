@@ -4,7 +4,8 @@ import 'package:app_links/app_links.dart';
 import 'home_screen.dart';
 import 'onboarding_screen.dart';
 import '../services/profile_service.dart';
-import 'splash_screen.dart';
+import '../services/feed_service.dart';
+import '../widgets/love_loading_view.dart';
 import 'dart:async';
 
 class AuthWrapper extends StatefulWidget {
@@ -16,6 +17,7 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _isResolving = true;
+  bool _isPreparingFeed = false;
   Session? _currentSession;
   bool _onboardingCompleted = false;
   StreamSubscription<Uri?>? _linkSubscription;
@@ -56,6 +58,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
             _currentSession = null;
             _onboardingCompleted = false;
             _isResolving = false;
+            _isPreparingFeed = false;
           });
         }
         return;
@@ -63,6 +66,20 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
       final completed =
           await ProfileService().isOnboardingCompleted(session.user.id);
+
+      if (completed) {
+        if (mounted) {
+          setState(() => _isPreparingFeed = true);
+        }
+        try {
+          await FeedService().getPotentialMatches(limit: 20);
+        } catch (_) {
+          // Feed can still load on the screen if prefetch fails.
+        }
+        if (mounted) {
+          setState(() => _isPreparingFeed = false);
+        }
+      }
 
       if (mounted) {
         setState(() {
@@ -81,19 +98,21 @@ class _AuthWrapperState extends State<AuthWrapper> {
             _currentSession = null;
             _onboardingCompleted = false;
             _isResolving = false;
+            _isPreparingFeed = false;
           });
         }
         return;
       }
 
       // Keep the signed-in session; default to onboarding if profile check failed.
-      if (mounted) {
-        setState(() {
-          _currentSession = session;
-          _onboardingCompleted = false;
-          _isResolving = false;
-        });
-      }
+        if (mounted) {
+          setState(() {
+            _currentSession = session;
+            _onboardingCompleted = false;
+            _isResolving = false;
+            _isPreparingFeed = false;
+          });
+        }
     }
   }
 
@@ -113,6 +132,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
             _currentSession = null;
             _onboardingCompleted = false;
             _isResolving = false;
+            _isPreparingFeed = false;
           });
         }
       }
@@ -154,8 +174,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isResolving) {
-      return const SplashView();
+    if (_isResolving || _isPreparingFeed) {
+      return const LoveLoadingView();
     }
 
     if (_currentSession == null) {
@@ -208,9 +228,7 @@ class _AuthenticatedGateState extends State<AuthenticatedGate> {
   Widget build(BuildContext context) {
     final session = Supabase.instance.client.auth.currentSession;
     if (session == null || session.isExpired) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const LoveLoadingView();
     }
     return widget.child;
   }

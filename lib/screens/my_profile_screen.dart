@@ -5,6 +5,7 @@ import '../services/profile_service.dart';
 import 'profile_edit_screen.dart';
 import 'profile_settings_screen.dart';
 import '../widgets/spotlight_sheet.dart';
+import '../widgets/photo_insights_panel.dart';
 
 class MyProfileScreen extends StatefulWidget {
   const MyProfileScreen({super.key});
@@ -21,7 +22,7 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
   Map<String, dynamic>? _profileData;
   bool _loading = true;
   bool _profilePictureRemoved = false;
-  int _selectedCategory = 0;
+  int _selectedCategory = 1;
   bool _isRizzMaxSelected = false;
 
   static const _categories = [
@@ -252,15 +253,123 @@ class _MyProfileScreenState extends State<MyProfileScreen> {
                     const SizedBox(height: 28),
                     _buildCategoryBar(),
                     const SizedBox(height: 24),
-                    _buildActionCards(),
-                    const SizedBox(height: 24),
-                    _buildPromoCarousel(),
-                    const SizedBox(height: 28),
-                    _buildFeatureComparison(),
+                    _buildCategoryContent(),
                   ],
                 ),
               ),
             ),
+    );
+  }
+
+  Widget _buildCategoryContent() {
+    switch (_selectedCategory) {
+      case 1:
+        return PhotoInsightsPanel(
+          photoUrls: photoUrlsFromProfile(_profileData),
+          onExplorePremium: () => setState(() => _selectedCategory = 0),
+        );
+      case 2:
+        return _buildSafetyContent();
+      case 0:
+      default:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildActionCards(),
+            const SizedBox(height: 24),
+            _buildPromoCarousel(),
+            const SizedBox(height: 28),
+            _buildFeatureComparison(),
+          ],
+        );
+    }
+  }
+
+  Widget _buildSafetyContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Safety and well-being',
+          style: AppFonts.geist(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Tools and tips to help you date safely and feel your best.',
+          style: AppFonts.geist(
+            fontSize: 15,
+            color: const Color(0xFF6B6B6B),
+            height: 1.35,
+          ),
+        ),
+        const SizedBox(height: 24),
+        _buildSafetyTile(
+          icon: Icons.block_outlined,
+          title: 'Block and report',
+          subtitle: 'Remove someone from your matches or report behavior.',
+        ),
+        _buildSafetyTile(
+          icon: Icons.visibility_off_outlined,
+          title: 'Privacy controls',
+          subtitle: 'Choose what appears on your profile and who can reach you.',
+        ),
+        _buildSafetyTile(
+          icon: Icons.support_agent_outlined,
+          title: 'Support resources',
+          subtitle: 'Guidance for safer online dating and getting help.',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSafetyTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F8F8),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFECECEC)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 24, color: Colors.black),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppFonts.geist(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: AppFonts.geist(
+                    fontSize: 14,
+                    color: const Color(0xFF6B6B6B),
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

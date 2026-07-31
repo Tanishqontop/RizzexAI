@@ -4,58 +4,67 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/feed_service.dart';
+import '../services/compliment_service.dart';
+import '../services/super_like_service.dart';
+import '../utils/discover_sections.dart';
 import '../widgets/discover_profile_card.dart';
+import '../widgets/discover_profile_modal.dart';
 import '../widgets/match_dialog.dart';
+import '../widgets/compliment_sheet.dart';
 
 class DiscoverScreen extends StatefulWidget {
   const DiscoverScreen({super.key});
 
   @override
-  State<DiscoverScreen> createState() => _DiscoverScreenState();
+  DiscoverScreenState createState() => DiscoverScreenState();
 }
 
-class _DiscoverScreenState extends State<DiscoverScreen> {
+class DiscoverScreenState extends State<DiscoverScreen> {
+
   final FeedService _feedService = FeedService();
-  final ScrollController _scrollController = ScrollController();
+  final ComplimentService _complimentService = ComplimentService();
+  final SuperLikeService _superLikeService = SuperLikeService();
 
   List<User> _users = [];
+  User? _currentUser;
   bool _isLoading = true;
-  bool _isLoadingMore = false;
   String? _error;
+  int _remainingCompliments = ComplimentService.dailyLimit;
+  int _remainingSuperLikes = SuperLikeService.weeklyLimit;
+
+  static const _cardHeight = 430.0;
 
   @override
   void initState() {
     super.initState();
-    _loadProfiles();
-    _scrollController.addListener(_onScroll);
+    _loadData();
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
+  /// Called when the Discover tab becomes active.
+  void refresh() {
+    _loadData();
   }
 
-  void _onScroll() {
-    if (_isLoadingMore || _isLoading) return;
-    if (!_scrollController.hasClients) return;
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent - 200) {
-      _loadMoreProfiles();
-    }
-  }
-
-  Future<void> _loadProfiles() async {
+  Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
 
     try {
-      final users = await _feedService.getPotentialMatches(limit: 20);
+      final results = await Future.wait([
+        _feedService.getDiscoverProfiles(limit: 36),
+        _feedService.getCurrentUserProfile(),
+        _complimentService.getRemainingComplimentsToday(),
+        _superLikeService.getRemainingSuperLikesThisWeek(),
+      ]);
+
       if (mounted) {
         setState(() {
-          _users = users;
+          _users = results[0] as List<User>;
+          _currentUser = results[1] as User?;
+          _remainingCompliments = results[2] as int;
+          _remainingSuperLikes = results[3] as int;
           _isLoading = false;
         });
       }
@@ -70,62 +79,113 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     }
   }
 
-  Future<void> _loadMoreProfiles() async {
-    if (_isLoadingMore) return;
-    setState(() => _isLoadingMore = true);
-
+  Future<void> _recordSwipe(
+    User user, {
+    required bool isLike,
+    bool superLike = false,
+  }) async {
     try {
-      final more = await _feedService.loadMoreProfiles(_users.length);
-      if (mounted) {
-        setState(() {
-          _users.addAll(more);
-          _isLoadingMore = false;
-        });
-      }
-    } catch (e) {
-      developer.log('Discover load more error: $e');
-      if (mounted) setState(() => _isLoadingMore = false);
-    }
-  }
-
-  Future<void> _likeUser(User user) async {
-    try {
-      final match = await _feedService.recordSwipe(
-        targetUserId: user.id,
-        isLike: true,
-      );
-
-      if (mounted) {
-        setState(() => _users.removeWhere((u) => u.id == user.id));
-
-        if (match != null) {
-          await showMatchDialog(context, match);
-        } else {
+      if (superLike && _remainingSuperLikes <= 0) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('You liked ${user.displayName}'),
-              backgroundColor: const Color(0xFF6B46C1),
+              content: Text(
+                'You have used all ${SuperLikeService.weeklyLimit} Super Likes for this week',
+              ),
             ),
           );
         }
+        return;
+      }
+
+      final match = await _feedService.recordSwipe(
+        targetUserId: user.id,
+        isLike: isLike,
+        superLike: superLike ? 'true' : null,
+      );
+
+      if (!mounted) return;
+
+      if (superLike) {
+        final remaining =
+            await _superLikeService.getRemainingSuperLikesThisWeek();
+        setState(() => _remainingSuperLikes = remaining);
+      }
+
+      if (isLike) {
+        setState(() => _users.removeWhere((u) => u.id == user.id));
+      }
+
+      if (match != null) {
+        await showMatchDialog(context, match);
+      } else if (isLike) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              superLike
+                  ? 'Super liked ${user.displayName}!'
+                  : 'You liked ${user.displayName}',
+            ),
+            backgroundColor:
+                superLike ? const Color(0xFFFFC629) : const Color(0xFF6B46C1),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not like profile: $e')),
+          SnackBar(content: Text('Could not update profile: $e')),
         );
       }
     }
+  }
+
+  Future<void> _sendCompliment(User user) async {
+    await showSendComplimentSheet(
+      context: context,
+      recipient: user,
+      remainingCompliments: _remainingCompliments,
+      onSend: (message) async {
+        try {
+          await _complimentService.sendCompliment(
+            recipientId: user.id,
+            message: message,
+          );
+          final remaining =
+              await _complimentService.getRemainingComplimentsToday();
+          if (mounted) {
+            setState(() => _remainingCompliments = remaining);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Compliment sent to ${user.displayName}!'),
+                backgroundColor: const Color(0xFF6B46C1),
+              ),
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(e.toString().replaceFirst('Exception: ', '')),
+              ),
+            );
+          }
+        }
+      },
+    );
   }
 
   void _showHelp() {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Discover', style: AppFonts.geist(fontWeight: FontWeight.w700)),
+        title: Text(
+          'Discover',
+          style: AppFonts.geist(fontWeight: FontWeight.w700),
+        ),
         content: Text(
-          'Every day we surface people who share your interests and dating '
-          'preferences. Tap a card to preview, or tap the heart to like.',
+          'Browse people grouped by shared interests, dating goals, and '
+          'communities. Tap a card for the full profile, or tap the heart to like.',
           style: AppFonts.geist(height: 1.4),
         ),
         actions: [
@@ -138,16 +198,43 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
     );
   }
 
+  void _openProfile(User user) {
+    showDiscoverProfileModal(
+      context: context,
+      user: user,
+      currentUser: _currentUser,
+      onLike: () => _recordSwipe(user, isLike: true),
+      onPass: () => _recordSwipe(user, isLike: false),
+      onCompliment: _remainingCompliments > 0
+          ? () => _sendCompliment(user)
+          : null,
+      onSuperLike: _remainingSuperLikes > 0
+          ? () => _recordSwipe(user, isLike: true, superLike: true)
+          : () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'You have used all ${SuperLikeService.weeklyLimit} Super Likes for this week',
+                  ),
+                ),
+              );
+            },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final cardWidth = MediaQuery.of(context).size.width * 0.78;
-    const cardHeight = 430.0;
+    final cardWidth = MediaQuery.of(context).size.width * 0.72;
+    final sections = buildDiscoverSections(
+      allUsers: _users,
+      currentUser: _currentUser,
+    ).where((section) => section.users.isNotEmpty).toList();
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: _loadProfiles,
+          onRefresh: _loadData,
           color: const Color(0xFF6B46C1),
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -178,26 +265,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFD54F),
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        child: Text(
-                          'See new people in 24 hours',
-                          style: AppFonts.geist(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 8),
                       Text(
                         'Connect over common ground with people who match your '
                         'vibe, refreshed every day.',
@@ -208,15 +276,6 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                         ),
                       ),
                       const SizedBox(height: 28),
-                      Text(
-                        'Recommended for you',
-                        style: AppFonts.geist(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
                     ],
                   ),
                 ),
@@ -243,7 +302,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                           Text(_error!, textAlign: TextAlign.center),
                           const SizedBox(height: 16),
                           FilledButton(
-                            onPressed: _loadProfiles,
+                            onPressed: _loadData,
                             style: FilledButton.styleFrom(
                               backgroundColor: const Color(0xFF6B46C1),
                             ),
@@ -254,7 +313,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     ),
                   ),
                 )
-              else if (_users.isEmpty)
+              else if (_users.isEmpty || sections.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
@@ -272,153 +331,95 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   ),
                 )
               else
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: cardHeight,
-                    child: ListView.separated(
-                      controller: _scrollController,
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                      itemCount: _users.length + (_isLoadingMore ? 1 : 0),
-                      separatorBuilder: (_, __) => const SizedBox(width: 16),
-                      itemBuilder: (context, index) {
-                        if (index >= _users.length) {
-                          return SizedBox(
-                            width: cardWidth,
-                            child: const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            ),
-                          );
-                        }
-
-                        final user = _users[index];
-                        return SizedBox(
-                          width: cardWidth,
-                          child: DiscoverProfileCard(
-                            user: user,
-                            highlights: discoverHighlightsFor(user),
-                            onLike: () => _likeUser(user),
-                            onTap: () => _showProfilePreview(user),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.info_outline,
-                        size: 16,
-                        color: Colors.grey.shade600,
-                      ),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'Based on your profile and past matches',
-                          style: AppFonts.geist(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                          ),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final section = sections[index];
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: index == sections.length - 1 ? 32 : 28,
                         ),
-                      ),
-                    ],
+                        child: _DiscoverSection(
+                          title: section.title,
+                          cardWidth: cardWidth,
+                          cardHeight: _cardHeight,
+                          users: section.users,
+                          highlightsBuilder: (user) =>
+                              discoverHighlightsForSection(user, section.kind),
+                          onOpenProfile: _openProfile,
+                          onLike: (user) => _recordSwipe(user, isLike: true),
+                        ),
+                      );
+                    },
+                    childCount: sections.length,
                   ),
                 ),
-              ),
             ],
           ),
         ),
       ),
     );
   }
+}
 
-  void _showProfilePreview(User user) {
-    final photos = user.allPhotos;
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.88,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: ListView(
-                controller: scrollController,
-                padding: EdgeInsets.zero,
-                children: [
-                  if (photos.isNotEmpty)
-                    AspectRatio(
-                      aspectRatio: 3 / 4,
-                      child: Image.network(
-                        photos.first,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Container(
-                          color: const Color(0xFFE8E8E8),
-                          child: const Icon(Icons.person, size: 80),
-                        ),
-                      ),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user.age != null
-                              ? '${user.displayName}, ${user.age}'
-                              : user.displayName,
-                          style: AppFonts.geist(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        if (user.bio != null && user.bio!.isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            user.bio!,
-                            style: AppFonts.geist(
-                              fontSize: 15,
-                              height: 1.45,
-                              color: const Color(0xFF4A4A4A),
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: 20),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _likeUser(user);
-                            },
-                            icon: const Icon(Icons.favorite),
-                            label: const Text('Like'),
-                            style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF6B46C1),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+class _DiscoverSection extends StatelessWidget {
+  final String title;
+  final double cardWidth;
+  final double cardHeight;
+  final List<User> users;
+  final List<String> Function(User user) highlightsBuilder;
+  final void Function(User user) onOpenProfile;
+  final void Function(User user) onLike;
+
+  const _DiscoverSection({
+    required this.title,
+    required this.cardWidth,
+    required this.cardHeight,
+    required this.users,
+    required this.highlightsBuilder,
+    required this.onOpenProfile,
+    required this.onLike,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          child: Text(
+            title,
+            style: AppFonts.geist(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: Colors.black,
+              letterSpacing: -0.2,
+            ),
+          ),
+        ),
+        SizedBox(
+          height: cardHeight,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+            itemCount: users.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            itemBuilder: (context, index) {
+              final user = users[index];
+              return SizedBox(
+                width: cardWidth,
+                child: DiscoverProfileCard(
+                  user: user,
+                  highlights: highlightsBuilder(user),
+                  onLike: () => onLike(user),
+                  onTap: () => onOpenProfile(user),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }

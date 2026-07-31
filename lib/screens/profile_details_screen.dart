@@ -1,5 +1,6 @@
 import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
+import '../widgets/onboarding_skip_button.dart';
 import 'location_screen.dart';
 
 class ProfileDetailsScreen extends StatelessWidget {
@@ -10,7 +11,14 @@ class ProfileDetailsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
+        child: OnboardingSkipLayout(
+          onSkip: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const LocationScreen()),
+            );
+          },
+          child: Column(
           children: [
             // Main content area
             Expanded(
@@ -103,6 +111,7 @@ class ProfileDetailsScreen extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

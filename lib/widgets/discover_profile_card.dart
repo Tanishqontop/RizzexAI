@@ -27,10 +27,11 @@ class DiscoverProfileCard extends StatelessWidget {
   }
 
   String get _nameAgeLine {
+    final initial = _shortName.isNotEmpty ? _shortName[0].toUpperCase() : '?';
     if (user.age != null) {
-      return '$_shortName, ${user.age}';
+      return '$initial, ${user.age}';
     }
-    return _shortName;
+    return initial;
   }
 
   @override
@@ -89,14 +90,7 @@ class DiscoverProfileCard extends StatelessWidget {
                           ],
                         ),
                       ),
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: highlights
-                            .take(4)
-                            .map((tag) => _HighlightChip(label: tag))
-                            .toList(),
-                      ),
+                      child: _HighlightRow(highlights: highlights),
                     ),
                   ),
                 ],
@@ -107,19 +101,42 @@ class DiscoverProfileCard extends StatelessWidget {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(
-                      _nameAgeLine,
-                      style: AppFonts.geist(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.black,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            _nameAgeLine,
+                            style: AppFonts.geist(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.black,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          width: 22,
+                          height: 22,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2196F3),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1.5),
+                          ),
+                          child: const Icon(
+                            Icons.check,
+                            size: 13,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   IconButton(
-                    onPressed: onLike,
+                    onPressed: () {
+                      onLike?.call();
+                    },
                     icon: const Icon(Icons.favorite_border),
                     color: Colors.black,
                     iconSize: 26,
@@ -144,6 +161,31 @@ class DiscoverProfileCard extends StatelessWidget {
       child: const Center(
         child: Icon(Icons.person, size: 64, color: Color(0xFFB0B0B0)),
       ),
+    );
+  }
+}
+
+class _HighlightRow extends StatelessWidget {
+  final List<String> highlights;
+
+  const _HighlightRow({required this.highlights});
+
+  @override
+  Widget build(BuildContext context) {
+    if (highlights.isEmpty) return const SizedBox.shrink();
+
+    final chips = <Widget>[
+      _HighlightChip(label: highlights.first),
+    ];
+
+    if (highlights.length > 1) {
+      chips.add(_HighlightChip(label: '+${highlights.length - 1}'));
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: chips,
     );
   }
 }
@@ -173,26 +215,3 @@ class _HighlightChip extends StatelessWidget {
   }
 }
 
-List<String> discoverHighlightsFor(User user) {
-  final tags = <String>[];
-
-  void add(String? value) {
-    if (value == null) return;
-    final trimmed = value.trim();
-    if (trimmed.isEmpty) return;
-    if (!tags.contains(trimmed)) tags.add(trimmed);
-  }
-
-  add(user.lookingFor);
-  add(user.religiousBelief);
-  add(user.politicalBelief);
-  if (user.ethnicity != null) {
-    for (final item in user.ethnicity!) {
-      add(item);
-    }
-  }
-  add(user.educationLevel);
-  add(user.zodiacSign);
-
-  return tags.take(4).toList();
-}

@@ -2,6 +2,7 @@ import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Import Supabase
 import '../services/profile_service.dart'; // NEW: Import ProfileService
+import '../widgets/onboarding_skip_button.dart';
 import 'notification_prompt_screen.dart';
 
 class DobEntryScreen extends StatefulWidget {
@@ -87,6 +88,14 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
     }
   }
 
+  void _skipAndContinue() {
+    if (!mounted || _loading) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationPromptScreen()),
+    );
+  }
+
   void _showAgeConfirmation() {
     if (_selectedDate == null || _calculatedAge == null) return;
 
@@ -139,7 +148,10 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Stack(
+        child: OnboardingSkipLayout(
+          onSkip: _skipAndContinue,
+          skipEnabled: !_loading,
+          child: Stack(
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -277,6 +289,7 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
