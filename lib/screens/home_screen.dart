@@ -1,16 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'discover_screen.dart';
 import 'feed_screen.dart';
-import 'ai_features_screen.dart';
+// v2: AI Features tab — uncomment for next release
+// import 'ai_features_screen.dart';
 import 'chat_screen.dart';
 import 'my_profile_screen.dart';
+import '../services/unread_messages_service.dart';
+import '../widgets/luma_bottom_navigation.dart';
 
 class HomeScreen extends StatefulWidget {
   final int initialTabIndex;
 
   static const feedTabIndex = 0;
   static const discoverTabIndex = 1;
-  static const profileTabIndex = 4;
+  // v2: was 4 when AI Features tab existed
+  static const profileTabIndex = 3;
 
   const HomeScreen({super.key, this.initialTabIndex = feedTabIndex});
 
@@ -20,8 +26,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late int _currentIndex;
+  bool _showChatBadge = false;
+  StreamSubscription<bool>? _unreadSubscription;
   final GlobalKey<DiscoverScreenState> _discoverKey =
       GlobalKey<DiscoverScreenState>();
+  final UnreadMessagesService _unreadMessagesService =
+      UnreadMessagesService.instance;
 
   late final List<Widget> _screens;
 
@@ -31,11 +41,23 @@ class _HomeScreenState extends State<HomeScreen> {
     _screens = [
       const FeedScreen(),
       DiscoverScreen(key: _discoverKey),
-      const AIFeaturesScreen(),
+      // v2: AI Features tab
+      // const AIFeaturesScreen(),
       const ChatScreen(),
       const MyProfileScreen(),
     ];
     _currentIndex = widget.initialTabIndex.clamp(0, _screens.length - 1);
+    _unreadSubscription =
+        _unreadMessagesService.watchHasUnreadMessages().listen((hasUnread) {
+      if (!mounted) return;
+      setState(() => _showChatBadge = hasUnread);
+    });
+  }
+
+  @override
+  void dispose() {
+    _unreadSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -45,12 +67,9 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: LumaBottomNavigation(
         currentIndex: _currentIndex,
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: const Color(0xFF6B46C1),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white70,
+        showChatBadge: _showChatBadge,
         onTap: (index) {
           setState(() {
             _currentIndex = index;
@@ -59,33 +78,6 @@ class _HomeScreenState extends State<HomeScreen> {
             _discoverKey.currentState?.refresh();
           }
         },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
-            label: 'Feed',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.explore_outlined),
-            activeIcon: Icon(Icons.explore),
-            label: 'Discover',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.bolt_outlined),
-            activeIcon: Icon(Icons.bolt),
-            label: 'AI Features',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_outlined),
-            activeIcon: Icon(Icons.chat),
-            label: 'Chat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
       ),
     );
   }

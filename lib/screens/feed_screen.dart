@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:rizzexai/theme/app_typography.dart';
 import '../models/user.dart';
 import '../models/user_match.dart';
-import '../widgets/love_loading_view.dart';
 import '../services/feed_service.dart';
 import '../widgets/swipeable_card_stack.dart';
 import '../widgets/match_dialog.dart';
@@ -90,17 +89,19 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> _loadUsers() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
-      final users = await _feedService.getPotentialMatches(limit: 20);
-      
+    try {
+      final users = await _feedService
+          .getPotentialMatches(limit: 20)
+          .timeout(const Duration(seconds: 20));
+
       if (mounted) {
         setState(() {
-          _users = users.cast<User>();
+          _users = users;
           _isLoading = false;
           _swipedCount = 0;
           _currentIndex = 0;
@@ -111,7 +112,7 @@ class _FeedScreenState extends State<FeedScreen> {
       developer.log('Error loading users: $e');
       if (mounted) {
         setState(() {
-          _error = e.toString();
+          _error = e.toString().replaceFirst('TimeoutException: ', '');
           _isLoading = false;
         });
       }
@@ -126,7 +127,7 @@ class _FeedScreenState extends State<FeedScreen> {
       
       if (mounted) {
         setState(() {
-          _users = users.cast<User>();
+          _users = users;
           _swipedCount = 0;
           _currentIndex = 0;
           _swipeHistory.clear();
@@ -363,7 +364,29 @@ class _FeedScreenState extends State<FeedScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const LoveLoadingView();
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                color: Color(0xFF6B46C1),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Loading profiles...',
+              style: AppFonts.geist(
+                fontSize: 15,
+                color: const Color(0xFF6B6B6B),
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     if (_error != null) {
@@ -417,48 +440,57 @@ class _FeedScreenState extends State<FeedScreen> {
 
     if (_users.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.favorite_border,
-              size: 80,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'No profiles found',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[600],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.people_outline,
+                size: 80,
+                color: Colors.grey[400],
               ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Check back later for new matches!',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[500],
-              ),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: _refreshFeed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6B46C1),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
+              const SizedBox(height: 20),
+              Text(
+                'No one to show yet',
+                style: AppFonts.geist(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87,
                 ),
               ),
-              child: const Text(
-                'Refresh',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              const SizedBox(height: 10),
+              Text(
+                'You\'re early! New profiles appear here as more people join. '
+                'Try Discover or finish setting up your profile.',
+                textAlign: TextAlign.center,
+                style: AppFonts.geist(
+                  fontSize: 15,
+                  height: 1.4,
+                  color: const Color(0xFF6B6B6B),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: _refreshFeed,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6B46C1),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                child: Text(
+                  'Refresh',
+                  style: AppFonts.geist(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }

@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:rizzexai/theme/app_typography.dart';
@@ -7,19 +5,14 @@ import '../services/profile_service.dart';
 
 class PhotoInsightsPanel extends StatelessWidget {
   final List<String> photoUrls;
-  final bool isPremium;
-  final VoidCallback? onExplorePremium;
 
   const PhotoInsightsPanel({
     super.key,
     required this.photoUrls,
-    this.isPremium = false,
-    this.onExplorePremium,
   });
 
   List<double> get _barHeights {
     if (photoUrls.isEmpty) return const [0.35, 0.55, 0.42, 0.68, 0.48, 0.38];
-    // Placeholder distribution until real analytics exist.
     const pattern = [0.32, 0.58, 0.44, 0.72, 0.51, 0.39];
     return List.generate(
       photoUrls.length,
@@ -35,10 +28,6 @@ class PhotoInsightsPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (!isPremium) ...[
-          _PremiumUpsellBanner(onTap: onExplorePremium ?? () {}),
-          const SizedBox(height: 28),
-        ],
         Text(
           'How are your photos doing?',
           style: AppFonts.geist(
@@ -60,16 +49,12 @@ class PhotoInsightsPanel extends StatelessWidget {
         const SizedBox(height: 28),
         if (!hasPhotos)
           _EmptyPhotosState()
-        else
+        else ...[
           _PhotoInsightsChart(
             photoUrls: photoUrls,
             barHeights: bars,
-            blurred: !isPremium,
           ),
-        const SizedBox(height: 24),
-        if (hasPhotos && !isPremium)
-          _PendingInsightsNote()
-        else if (hasPhotos && isPremium)
+          const SizedBox(height: 24),
           Text(
             'Views are estimated from profile impressions over the last 7 days.',
             style: AppFonts.geist(
@@ -78,65 +63,8 @@ class PhotoInsightsPanel extends StatelessWidget {
               height: 1.35,
             ),
           ),
+        ],
       ],
-    );
-  }
-}
-
-class _PremiumUpsellBanner extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _PremiumUpsellBanner({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF3F3F3),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: const BoxDecoration(
-                  color: Colors.black,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.bolt,
-                  color: Colors.white,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  'Find out how your photos are performing with RizzMax',
-                  style: AppFonts.geist(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black,
-                    height: 1.3,
-                  ),
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                color: Color(0xFF8A8A8A),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
@@ -144,12 +72,10 @@ class _PremiumUpsellBanner extends StatelessWidget {
 class _PhotoInsightsChart extends StatelessWidget {
   final List<String> photoUrls;
   final List<double> barHeights;
-  final bool blurred;
 
   const _PhotoInsightsChart({
     required this.photoUrls,
     required this.barHeights,
-    required this.blurred,
   });
 
   static const _maxBarHeight = 180.0;
@@ -188,7 +114,6 @@ class _PhotoInsightsChart extends StatelessWidget {
                   _PhotoThumb(
                     url: photoUrls[index],
                     size: _thumbSize,
-                    blurred: blurred,
                   ),
                 ],
               ),
@@ -259,73 +184,32 @@ class _InsightBar extends StatelessWidget {
 class _PhotoThumb extends StatelessWidget {
   final String url;
   final double size;
-  final bool blurred;
 
   const _PhotoThumb({
     required this.url,
     required this.size,
-    required this.blurred,
   });
 
   @override
   Widget build(BuildContext context) {
-    Widget image = ClipOval(
-      child: CachedNetworkImage(
-        imageUrl: url,
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        placeholder: (_, __) => Container(
-          color: const Color(0xFFE8E8E8),
-        ),
-        errorWidget: (_, __, ___) => Container(
-          color: const Color(0xFFE8E8E8),
-          child: const Icon(Icons.broken_image, size: 18),
-        ),
-      ),
-    );
-
-    if (blurred) {
-      image = ImageFiltered(
-        imageFilter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-        child: image,
-      );
-    }
-
     return SizedBox(
       width: size,
       height: size,
-      child: image,
-    );
-  }
-}
-
-class _PendingInsightsNote extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(top: 2),
-          child: Icon(
-            Icons.hourglass_bottom_outlined,
-            size: 18,
-            color: Color(0xFF7A7A7A),
+      child: ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: url,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          placeholder: (_, __) => Container(
+            color: const Color(0xFFE8E8E8),
+          ),
+          errorWidget: (_, __, ___) => Container(
+            color: const Color(0xFFE8E8E8),
+            child: const Icon(Icons.broken_image, size: 18),
           ),
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            'Photo insights can take a little while to appear. Check back soon.',
-            style: AppFonts.geist(
-              fontSize: 14,
-              color: const Color(0xFF6B6B6B),
-              height: 1.4,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

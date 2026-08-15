@@ -82,13 +82,32 @@ class AuthService {
     }
   }
 
+  /// Permanently deletes the signed-in account and all associated data.
+  static Future<void> deleteAccount() async {
+    try {
+      await _supabase.rpc('delete_user_account');
+      developer.log('Account deleted successfully');
+    } on PostgrestException catch (e) {
+      developer.log('Account deletion failed: ${e.message}', error: e);
+      rethrow;
+    } catch (e) {
+      developer.log('Unexpected error during account deletion', error: e);
+      rethrow;
+    } finally {
+      try {
+        await signOut();
+      } catch (_) {
+        // Session may already be invalid after deletion.
+      }
+    }
+  }
+
   /// Sends a password reset email to the user.
   static Future<void> resetPassword(String email) async {
     try {
       await _supabase.auth.resetPasswordForEmail(
         email,
-        // IMPORTANT: Replace with your actual deep link redirect URL
-        // redirectTo: 'com.example.yourapp://login-callback/reset-password',
+        // redirectTo: AppConfig.authRedirectUrl,
       );
       developer.log('Password reset email sent to: $email');
     } on AuthException catch (e) {

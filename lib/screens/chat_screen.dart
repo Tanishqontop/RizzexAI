@@ -1,7 +1,6 @@
 import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_match.dart';
 import '../models/compliment.dart';
 import '../models/received_super_like.dart';
@@ -9,12 +8,10 @@ import '../models/user.dart' as app_user;
 import '../services/match_service.dart';
 import '../services/compliment_service.dart';
 import '../services/super_like_service.dart';
-import '../services/profile_service.dart';
 import '../services/feed_service.dart';
 import '../widgets/match_dialog.dart';
 import '../widgets/compliment_sheet.dart';
 import '../widgets/discover_profile_modal.dart';
-import '../widgets/spotlight_sheet.dart';
 import 'conversation_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -28,13 +25,11 @@ class _ChatScreenState extends State<ChatScreen> {
   final MatchService _matchService = MatchService();
   final ComplimentService _complimentService = ComplimentService();
   final SuperLikeService _superLikeService = SuperLikeService();
-  final ProfileService _profileService = ProfileService();
   final FeedService _feedService = FeedService();
 
   List<UserMatch> _matches = [];
   List<Compliment> _pendingCompliments = [];
   List<ReceivedSuperLike> _receivedSuperLikes = [];
-  String? _currentUserAvatarUrl;
   bool _isLoading = true;
   bool _olderChatsExpanded = false;
   String? _error;
@@ -54,25 +49,17 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      final profileFuture = userId != null
-          ? _profileService.getProfile(userId)
-          : Future<Map<String, dynamic>?>.value(null);
-
       final results = await Future.wait([
         _matchService.getMatches(),
         _complimentService.getPendingReceivedCompliments(),
         _superLikeService.getReceivedSuperLikes().catchError((_) => <ReceivedSuperLike>[]),
-        profileFuture,
       ]);
 
       if (mounted) {
-        final profile = results[3] as Map<String, dynamic>?;
         setState(() {
           _matches = results[0] as List<UserMatch>;
           _pendingCompliments = results[1] as List<Compliment>;
           _receivedSuperLikes = results[2] as List<ReceivedSuperLike>;
-          _currentUserAvatarUrl = _resolveAvatarUrl(profile);
           _isLoading = false;
         });
       }
@@ -84,17 +71,6 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     }
-  }
-
-  String? _resolveAvatarUrl(Map<String, dynamic>? profile) {
-    if (profile == null) return null;
-    final avatar = profile['avatar_url']?.toString();
-    if (avatar != null && avatar.isNotEmpty) return avatar;
-    final media = profile['media_urls'] as List<dynamic>?;
-    if (media != null && media.isNotEmpty) {
-      return media.first.toString();
-    }
-    return null;
   }
 
   DateTime _activityDate(UserMatch match) {
@@ -250,9 +226,7 @@ class _ChatScreenState extends State<ChatScreen> {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
           _buildHeader(),
-          const SizedBox(height: 20),
-          _buildYourMatchesSection(),
-          const SizedBox(height: 28),
+          const SizedBox(height: 8),
           _buildChatsSectionHeader(),
           const SizedBox(height: 8),
           if (_matches.isEmpty &&
@@ -294,85 +268,6 @@ class _ChatScreenState extends State<ChatScreen> {
         IconButton(
           onPressed: () {},
           icon: const Icon(Icons.search, size: 26, color: Colors.black),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildYourMatchesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Your matches',
-          style: AppFonts.geist(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: Colors.black,
-          ),
-        ),
-        const SizedBox(height: 12),
-        Material(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            onTap: () => showSpotlightSheet(context),
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE8E8E8)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: const Color(0xFFF0F0F0),
-                    backgroundImage: _currentUserAvatarUrl != null
-                        ? CachedNetworkImageProvider(_currentUserAvatarUrl!)
-                        : null,
-                    child: _currentUserAvatarUrl == null
-                        ? const Icon(Icons.person, color: Color(0xFF9A9A9A))
-                        : null,
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Be seen up to 10x more',
-                          style: AppFonts.geist(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Shine a Spotlight and be seen first.',
-                          style: AppFonts.geist(
-                            fontSize: 14,
-                            color: const Color(0xFF6B6B6B),
-                            height: 1.3,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.chevron_right, color: Colors.grey[400], size: 28),
-                ],
-              ),
-            ),
-          ),
         ),
       ],
     );

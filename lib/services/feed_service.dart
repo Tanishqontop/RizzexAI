@@ -3,10 +3,12 @@ import 'dart:developer' as developer;
 import '../models/user.dart' as app_user;
 import '../models/user_match.dart';
 import 'match_service.dart';
+import 'safety_service.dart';
 
 class FeedService {
   final _supabase = Supabase.instance.client;
   final MatchService _matchService = MatchService();
+  final SafetyService _safetyService = SafetyService();
 
   /// Private helper to execute Supabase calls with standardized error handling.
   Future<T> _guardedCall<T>(Future<T> Function() function) async {
@@ -21,78 +23,53 @@ class FeedService {
     }
   }
 
-  /// Fetches potential matches for the current user
+  /// Fetches potential matches for the current user (complete profiles only).
   Future<List<app_user.User>> getPotentialMatches({
     int limit = 10,
     int offset = 0,
   }) async {
     return _guardedCall(() async {
-      try {
-        final currentUserId = _supabase.auth.currentUser?.id;
-        if (currentUserId == null) {
-          throw Exception('User not authenticated');
-        }
+      final currentUserId = _supabase.auth.currentUser?.id;
+      if (currentUserId == null) {
+        throw Exception('User not authenticated');
+      }
 
-        developer.log('Fetching potential matches for user: $currentUserId');
+      developer.log('Fetching potential matches for user: $currentUserId');
 
-        final swipedIds = await _matchService.getSwipedUserIds();
+      final swipedIds = await _matchService.getSwipedUserIds();
+      final hiddenIds = await _safetyService.getHiddenUserIds();
+      final users = <app_user.User>[];
+      var pageOffset = offset;
+      const pageSize = 40;
 
-        var query = _supabase
+      while (users.length < limit) {
+        final response = await _supabase
             .from('profiles')
             .select()
-            .neq('id', currentUserId) // Exclude current user
+            .neq('id', currentUserId)
             .order('updated_at', ascending: false)
-            .range(offset, offset + limit - 1);
+            .range(pageOffset, pageOffset + pageSize - 1);
 
-        // Add basic filtering based on user preferences
-        // Note: In a real app, you'd implement more complex matching logic
-        // For now, we'll just get all profiles except the current user
+        if (response.isEmpty) break;
 
-        final response = await query;
-        
-        developer.log('Raw response from database: $response');
-        developer.log('Number of profiles found: ${response.length}');
-        
-        if (response.isEmpty) {
-          developer.log('No profiles found in database');
-          return [];
-        }
-        
-        // Log the first profile to see what fields are available
-        if (response.isNotEmpty) {
-          developer.log('First profile structure: ${response.first}');
-        }
-        
-        final users = <app_user.User>[];
-        
         for (final profile in response) {
-          try {
-            final profileId = profile['id'] as String;
-            if (swipedIds.contains(profileId)) continue;
+          final profileId = profile['id'] as String;
+          if (swipedIds.contains(profileId)) continue;
+          if (hiddenIds.contains(profileId)) continue;
 
-            // Try the full mapping first
-            final user = app_user.User.fromMap(profile);
-            users.add(user);
-          } catch (e) {
-            developer.log('Error mapping profile with full fields: $e');
-            try {
-              // Fallback to basic mapping
-              final user = app_user.User.fromBasicMap(profile);
-              users.add(user);
-              developer.log('Successfully mapped profile with basic fields');
-            } catch (e2) {
-              developer.log('Error mapping profile with basic fields: $e2');
-              // Skip this profile
-            }
-          }
+          final user = _mapProfile(profile);
+          if (user == null || !_isDiscoverable(user)) continue;
+
+          users.add(user);
+          if (users.length >= limit) break;
         }
 
-        developer.log('Successfully mapped ${users.length} users');
-        return users;
-      } catch (e) {
-        developer.log('Error fetching potential matches: $e');
-        rethrow;
+        if (response.length < pageSize) break;
+        pageOffset += pageSize;
       }
+
+      developer.log('Feed profiles ready: ${users.length}');
+      return users;
     });
   }
 
@@ -110,6 +87,7 @@ class FeedService {
       developer.log('Fetching discover profiles for user: $currentUserId');
 
       final passedIds = await _matchService.getPassedUserIds();
+      final hiddenIds = await _safetyService.getHiddenUserIds();
       final users = <app_user.User>[];
       var offset = 0;
       const pageSize = 40;
@@ -127,6 +105,7 @@ class FeedService {
         for (final profile in response) {
           final profileId = profile['id'] as String;
           if (passedIds.contains(profileId)) continue;
+          if (hiddenIds.contains(profileId)) continue;
 
           final user = _mapProfile(profile);
           if (user == null || !_isDiscoverable(user)) continue;

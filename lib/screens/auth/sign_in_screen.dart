@@ -79,7 +79,7 @@ class _SignInScreenState extends State<SignInScreen> {
     try {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'com.example.rizzexai://login-callback/',
+        redirectTo: 'com.rizzexai.app://login-callback/',
         queryParams: {'prompt': 'select_account'},
       );
       // AuthWrapper will handle navigation based on phone verification status

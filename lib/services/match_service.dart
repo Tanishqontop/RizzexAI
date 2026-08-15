@@ -3,10 +3,12 @@ import 'dart:developer' as developer;
 import '../models/user.dart' as app_user;
 import '../models/user_match.dart';
 import 'super_like_service.dart';
+import 'safety_service.dart';
 
 class MatchService {
   final _supabase = Supabase.instance.client;
   final SuperLikeService _superLikeService = SuperLikeService();
+  final SafetyService _safetyService = SafetyService();
 
   String? get _currentUserId => _supabase.auth.currentUser?.id;
 
@@ -125,6 +127,7 @@ class MatchService {
         .order('created_at', ascending: false);
 
     final superLikeTimes = await _loadSuperLikeTimes();
+    final hiddenIds = await _safetyService.getHiddenUserIds();
 
     final matches = <UserMatch>[];
     for (final row in response as List) {
@@ -133,6 +136,8 @@ class MatchService {
       final matchId = row['id'] as String;
       final otherUserId =
           currentUserId == user1Id ? user2Id : user1Id;
+
+      if (hiddenIds.contains(otherUserId)) continue;
 
       final profile = await _fetchProfile(otherUserId);
       if (profile == null) continue;
@@ -167,6 +172,7 @@ class MatchService {
         lastMessageAt: lastMsg?['created_at'] != null
             ? DateTime.parse(lastMsg!['created_at'] as String)
             : null,
+        lastMessageSenderId: lastMsg?['sender_id'] as String?,
         receivedSuperLike: superLikeAt != null,
         superLikeAt: superLikeAt,
       ));
@@ -203,7 +209,7 @@ class MatchService {
     try {
       return await _supabase
           .from('messages')
-          .select('content, created_at, message_type, view_once')
+          .select('content, created_at, message_type, view_once, sender_id')
           .eq('match_id', matchId)
           .order('created_at', ascending: false)
           .limit(1)
@@ -213,7 +219,7 @@ class MatchService {
       try {
         return await _supabase
             .from('messages')
-            .select('content, created_at, message_type')
+            .select('content, created_at, message_type, sender_id')
             .eq('match_id', matchId)
             .order('created_at', ascending: false)
             .limit(1)
@@ -272,6 +278,18 @@ class MatchService {
   }
 
   /// Users the current user explicitly passed on (still eligible for Discover).
+  Future<void> removeMatchWith(String otherUserId) async {
+    final currentUserId = _currentUserId;
+    if (currentUserId == null) return;
+
+    final ids = [currentUserId, otherUserId]..sort();
+    await _supabase
+        .from('matches')
+        .delete()
+        .eq('user1_id', ids[0])
+        .eq('user2_id', ids[1]);
+  }
+
   Future<List<String>> getPassedUserIds() async {
     final currentUserId = _currentUserId;
     if (currentUserId == null) return [];

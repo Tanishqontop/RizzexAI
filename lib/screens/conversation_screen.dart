@@ -1,4 +1,5 @@
 import 'package:rizzexai/theme/app_typography.dart';
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -6,7 +7,9 @@ import 'package:image_picker/image_picker.dart';
 import '../models/user_match.dart';
 import '../models/chat_message.dart';
 import '../services/chat_service.dart';
+import '../services/unread_messages_service.dart';
 import '../widgets/chat_image_viewer.dart';
+import '../widgets/safety_actions.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ConversationScreen extends StatefulWidget {
@@ -24,6 +27,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
   final ScrollController _scrollController = ScrollController();
   final ImagePicker _imagePicker = ImagePicker();
   bool _isSending = false;
+  StreamSubscription<List<ChatMessage>>? _messagesSubscription;
 
   String? get _currentUserId => Supabase.instance.client.auth.currentUser?.id;
 
@@ -31,10 +35,22 @@ class _ConversationScreenState extends State<ConversationScreen> {
   void initState() {
     super.initState();
     _messageController.addListener(() => setState(() {}));
+    _markConversationRead();
+    _messagesSubscription =
+        _chatService.watchMessages(widget.match.id).listen((messages) {
+      if (messages.isNotEmpty) {
+        _markConversationRead();
+      }
+    });
+  }
+
+  Future<void> _markConversationRead() async {
+    await UnreadMessagesService.instance.markMatchAsRead(widget.match.id);
   }
 
   @override
   void dispose() {
+    _messagesSubscription?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -350,15 +366,12 @@ class _ConversationScreenState extends State<ConversationScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.phone_outlined, size: 22),
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.videocam_outlined, size: 24),
-          ),
-          IconButton(
-            onPressed: () {},
+            onPressed: () => showSafetyActionsSheet(
+              context,
+              userId: widget.match.matchedUser.id,
+              userName: widget.match.matchedUser.displayName,
+              onBlocked: () => Navigator.of(context).pop(),
+            ),
             icon: const Icon(Icons.more_vert, size: 24),
           ),
         ],

@@ -8,6 +8,7 @@ class UserMatch {
   final DateTime createdAt;
   final String? lastMessage;
   final DateTime? lastMessageAt;
+  final String? lastMessageSenderId;
   final bool receivedSuperLike;
   final DateTime? superLikeAt;
 
@@ -19,6 +20,7 @@ class UserMatch {
     required this.createdAt,
     this.lastMessage,
     this.lastMessageAt,
+    this.lastMessageSenderId,
     bool? receivedSuperLike,
     this.superLikeAt,
   }) : receivedSuperLike = receivedSuperLike ?? false;

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:app_links/app_links.dart';
 import 'home_screen.dart';
 import 'onboarding_screen.dart';
+import 'basic_info_intro_screen.dart';
 import '../services/profile_service.dart';
 import '../services/feed_service.dart';
 import '../widgets/love_loading_view.dart';
@@ -183,11 +184,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
 
     return AuthenticatedGate(
-      child: HomeScreen(
-        initialTabIndex: _onboardingCompleted
-            ? HomeScreen.feedTabIndex
-            : HomeScreen.profileTabIndex,
-      ),
+      child: _onboardingCompleted
+          ? HomeScreen(initialTabIndex: HomeScreen.feedTabIndex)
+          : const BasicInfoIntroScreen(),
     );
   }
 

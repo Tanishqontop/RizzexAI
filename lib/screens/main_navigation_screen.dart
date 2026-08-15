@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'ai_features_screen.dart';
+// v2: AI Features tab — uncomment for next release
+// import 'ai_features_screen.dart';
 import 'feed_screen.dart';
 import 'chat_screen.dart';
 import 'my_profile_screen.dart';
@@ -16,7 +17,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<Widget> _screens = [
     const FeedScreen(),
-    const AIFeaturesScreen(),
+    // v2: AI Features tab
+    // const AIFeaturesScreen(),
     const ChatScreen(),
     const MyProfileScreen(),
   ];
@@ -64,11 +66,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               activeIcon: Icon(Icons.home),
               label: 'Feed',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.auto_awesome_outlined),
-              activeIcon: Icon(Icons.auto_awesome),
-              label: 'AI Features',
-            ),
+            // v2: AI Features tab
+            // const BottomNavigationBarItem(
+            //   icon: Icon(Icons.auto_awesome_outlined),
+            //   activeIcon: Icon(Icons.auto_awesome),
+            //   label: 'AI Features',
+            // ),
             BottomNavigationBarItem(
               icon: Icon(Icons.chat_bubble_outline),
               activeIcon: Icon(Icons.chat_bubble),

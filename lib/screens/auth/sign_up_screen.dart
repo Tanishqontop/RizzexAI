@@ -43,6 +43,35 @@ class _SignUpScreenState extends State<SignUpScreen> {
         }
         return;
       }
+
+      if (response.session == null) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          await showDialog<void>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Confirm your email'),
+              content: Text(
+                'We sent a confirmation link to ${_emailController.text.trim()}.\n\n'
+                'Open it, then come back and sign in.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const SignInScreen()),
+            );
+          }
+        }
+        return;
+      }
+
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
@@ -69,7 +98,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     try {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'com.example.rizzexai://login-callback/',
+        redirectTo: 'com.rizzexai.app://login-callback/',
       );
       // AuthWrapper will handle navigation based on phone verification status
     } catch (e) {

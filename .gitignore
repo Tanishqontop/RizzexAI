@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Release signing — never commit real credentials
+/android/key.properties
+/android/upload-keystore.jks
+
+# Local API keys — copy env.json.example to env.json
+env.json

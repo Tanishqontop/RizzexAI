@@ -9,15 +9,12 @@ import java.io.FileInputStream
 
 val keystoreProperties = Properties()
 val keystorePropertiesFile = file("../key.properties")
-println("DEBUG: keystorePropertiesFile.exists() = "+keystorePropertiesFile.exists())
-println("DEBUG: keystorePropertiesFile.absolutePath = "+keystorePropertiesFile.absolutePath)
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
-    println("DEBUG: keystoreProperties = $keystoreProperties")
 }
 
 android {
-    namespace = "com.example.rizzexai"
+    namespace = "com.rizzexai.app"
     compileSdk = 35
     ndkVersion = "27.0.12077973"
 
@@ -31,7 +28,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.rizzexai"
+        applicationId = "com.rizzexai.app"
         minSdk = 21
         targetSdk = 35
         versionCode = flutter.versionCode
@@ -40,20 +37,33 @@ android {
 
     signingConfigs {
         create("release") {
-            val storeFilePath = keystoreProperties["storeFile"]?.toString()
-            println("DEBUG: storeFilePath = '$storeFilePath'")
-            if (storeFilePath != null) {
-                storeFile = file(storeFilePath)
+            if (keystorePropertiesFile.exists()) {
+                val storeFilePath = keystoreProperties["storeFile"]?.toString()
+                if (storeFilePath != null) {
+                    // key.properties lives in android/; resolve keystore from there
+                    storeFile = file("../$storeFilePath")
+                }
+                storePassword = keystoreProperties["storePassword"]?.toString()
+                keyAlias = keystoreProperties["keyAlias"]?.toString()
+                keyPassword = keystoreProperties["keyPassword"]?.toString()
             }
-            storePassword = keystoreProperties["storePassword"]?.toString() ?: ""
-            keyAlias = keystoreProperties["keyAlias"]?.toString() ?: ""
-            keyPassword = keystoreProperties["keyPassword"]?.toString() ?: ""
         }
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+        }
+    }
+
+    packaging {
+        jniLibs {
+            // Helps sideload/install on Android 15+ devices with 16 KB page size.
+            useLegacyPackaging = true
         }
     }
 }
