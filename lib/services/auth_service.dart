@@ -88,17 +88,20 @@ class AuthService {
       await _supabase.rpc('delete_user_account');
       developer.log('Account deleted successfully');
     } on PostgrestException catch (e) {
-      developer.log('Account deletion failed: ${e.message}', error: e);
+      developer.log(
+        'Account deletion failed (${e.code ?? 'unknown'}): ${e.message}',
+        error: e,
+      );
       rethrow;
     } catch (e) {
       developer.log('Unexpected error during account deletion', error: e);
       rethrow;
-    } finally {
-      try {
-        await signOut();
-      } catch (_) {
-        // Session may already be invalid after deletion.
-      }
+    }
+
+    try {
+      await signOut();
+    } catch (_) {
+      // Session may already be invalid after deletion.
     }
   }
 

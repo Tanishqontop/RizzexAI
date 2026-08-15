@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/profile_service.dart';
+import '../utils/age_validator.dart';
 
 class ProfileEditScreen extends StatefulWidget {
   const ProfileEditScreen({super.key});
@@ -22,14 +23,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   bool _profilePictureRemoved = false;
 
   // Helpers
-  int _calculateAge(DateTime dob) {
-    final now = DateTime.now();
-    int age = now.year - dob.year;
-    if (now.month < dob.month || (now.month == dob.month && now.day < dob.day)) {
-      age--;
-    }
-    return age;
-  }
+  int _calculateAge(DateTime dob) => AgeValidator.calculateAge(dob);
 
   DateTime? _parseDobFromProfile() {
     final raw = _profileData?['date_of_birth'] ?? _profileData?['dob'];
@@ -1144,12 +1138,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     if (_currentUser == null) return;
     final now = DateTime.now();
     final existingDob = _parseDobFromProfile();
-    final initial = existingDob ?? DateTime(now.year - 25, now.month, now.day);
+    final initial = existingDob ??
+        AgeValidator.defaultBirthDatePickerInitial(reference: now);
     final picked = await showDatePicker(
       context: context,
       initialDate: initial,
-      firstDate: DateTime(1900),
-      lastDate: DateTime(now.year - 10, now.month, now.day),
+      firstDate: AgeValidator.earliestAllowedBirthDate(reference: now),
+      lastDate: AgeValidator.latestAllowedBirthDate(reference: now),
       helpText: 'Select your date of birth',
       builder: (context, child) {
         return Theme(
@@ -1163,6 +1158,15 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       },
     );
     if (picked != null) {
+      if (!AgeValidator.isAtLeast18(picked, reference: now)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(AgeValidator.underAgeMessage)),
+          );
+        }
+        return;
+      }
+
       setState(() => _saving = true);
       try {
         await _profileService.upsertProfile(userId: _currentUser!.id, dob: picked);

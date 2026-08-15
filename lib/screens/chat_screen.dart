@@ -9,6 +9,8 @@ import '../services/match_service.dart';
 import '../services/compliment_service.dart';
 import '../services/super_like_service.dart';
 import '../services/feed_service.dart';
+import '../services/safety_service.dart';
+import '../utils/image_url_utils.dart';
 import '../widgets/match_dialog.dart';
 import '../widgets/compliment_sheet.dart';
 import '../widgets/discover_profile_modal.dart';
@@ -18,14 +20,15 @@ class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
   @override
-  State<ChatScreen> createState() => _ChatScreenState();
+  ChatScreenState createState() => ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class ChatScreenState extends State<ChatScreen> {
   final MatchService _matchService = MatchService();
   final ComplimentService _complimentService = ComplimentService();
   final SuperLikeService _superLikeService = SuperLikeService();
   final FeedService _feedService = FeedService();
+  final SafetyService _safetyService = SafetyService();
 
   List<UserMatch> _matches = [];
   List<Compliment> _pendingCompliments = [];
@@ -35,6 +38,9 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _error;
 
   static const _recentWindowDays = 14;
+
+  /// Reload chats (matches, compliments, super likes).
+  void refresh() => _loadAll();
 
   @override
   void initState() {
@@ -49,6 +55,7 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     try {
+      final hiddenIds = await _safetyService.getHiddenUserIds();
       final results = await Future.wait([
         _matchService.getMatches(),
         _complimentService.getPendingReceivedCompliments(),
@@ -57,9 +64,15 @@ class _ChatScreenState extends State<ChatScreen> {
 
       if (mounted) {
         setState(() {
-          _matches = results[0] as List<UserMatch>;
-          _pendingCompliments = results[1] as List<Compliment>;
-          _receivedSuperLikes = results[2] as List<ReceivedSuperLike>;
+          _matches = (results[0] as List<UserMatch>)
+              .where((m) => !hiddenIds.contains(m.matchedUser.id))
+              .toList();
+          _pendingCompliments = (results[1] as List<Compliment>)
+              .where((c) => !hiddenIds.contains(c.senderId))
+              .toList();
+          _receivedSuperLikes = (results[2] as List<ReceivedSuperLike>)
+              .where((s) => !hiddenIds.contains(s.swiperId))
+              .toList();
           _isLoading = false;
         });
       }
@@ -127,12 +140,19 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _openConversation(UserMatch match) async {
-    await Navigator.of(context).push(
+    final blocked = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (context) => ConversationScreen(match: match),
       ),
     );
-    _loadAll();
+    if (mounted) {
+      await _loadAll();
+      if (blocked == true && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Conversation removed from your chats')),
+        );
+      }
+    }
   }
 
   Future<void> _replyToCompliment(Compliment compliment) async {
@@ -431,11 +451,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   String? _photoUrlForUser(String? avatarUrl, List<String>? profilePhotos) {
-    if (avatarUrl != null && avatarUrl.isNotEmpty) return avatarUrl;
-    if (profilePhotos != null && profilePhotos.isNotEmpty) {
-      return profilePhotos.first;
-    }
-    return null;
+    return firstValidImageUrl([
+      avatarUrl,
+      ...?profilePhotos,
+    ]);
   }
 
   Widget _buildChatRow({

@@ -105,15 +105,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
         return;
       }
 
-      // Keep the signed-in session; default to onboarding if profile check failed.
-        if (mounted) {
-          setState(() {
-            _currentSession = session;
-            _onboardingCompleted = false;
-            _isResolving = false;
-            _isPreparingFeed = false;
-          });
-        }
+      var completed = false;
+      try {
+        completed = await ProfileService().isOnboardingCompleted(user.id);
+      } catch (_) {}
+
+      if (mounted) {
+        setState(() {
+          _currentSession = session;
+          _onboardingCompleted = completed;
+          _isResolving = false;
+          _isPreparingFeed = false;
+        });
+      }
     }
   }
 

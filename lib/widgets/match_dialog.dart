@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/user_match.dart';
+import '../utils/image_url_utils.dart';
 
 Future<void> showMatchDialog(BuildContext context, UserMatch match) {
   final user = match.matchedUser;
-  final photoUrl = user.avatarUrl ??
-      (user.profilePhotos?.isNotEmpty == true
-          ? user.profilePhotos!.first
-          : null);
+  final photoUrl = firstValidImageUrl([
+    user.avatarUrl,
+    ...?user.profilePhotos,
+  ]);
 
   return showDialog<void>(
     context: context,

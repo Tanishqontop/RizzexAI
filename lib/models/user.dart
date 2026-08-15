@@ -1,3 +1,5 @@
+import '../utils/image_url_utils.dart';
+
 class User {
   final String id;
   final String? username;
@@ -115,7 +117,10 @@ class User {
     final photosRaw = map['profile_photos'] ?? map['media_urls'];
     List<String>? profilePhotos;
     if (photosRaw is List) {
-      profilePhotos = photosRaw.map((e) => e.toString()).toList();
+      profilePhotos = photosRaw
+          .map((e) => e.toString().trim())
+          .where((url) => url.isNotEmpty)
+          .toList();
     }
 
     DateTime parseDate(dynamic value) {
@@ -262,13 +267,16 @@ class User {
 
   List<String> get allPhotos {
     final photos = <String>[];
-    if (avatarUrl != null && !_isProfileVideoUrl(avatarUrl!)) {
-      photos.add(avatarUrl!);
+    if (isValidNetworkImageUrl(avatarUrl) &&
+        !_isProfileVideoUrl(avatarUrl!)) {
+      photos.add(avatarUrl!.trim());
     }
     if (profilePhotos != null) {
-      photos.addAll(
-        profilePhotos!.where((url) => !_isProfileVideoUrl(url)),
-      );
+      for (final url in profilePhotos!) {
+        if (isValidNetworkImageUrl(url) && !_isProfileVideoUrl(url)) {
+          photos.add(url.trim());
+        }
+      }
     }
     return photos;
   }

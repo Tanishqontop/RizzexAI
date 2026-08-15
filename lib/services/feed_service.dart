@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:developer' as developer;
 import '../models/user.dart' as app_user;
 import '../models/user_match.dart';
+import '../utils/age_validator.dart';
 import 'match_service.dart';
 import 'safety_service.dart';
 
@@ -141,7 +142,13 @@ class FeedService {
     final hasName = (user.firstName?.trim().isNotEmpty ?? false) ||
         (user.lastName?.trim().isNotEmpty ?? false) ||
         (user.username?.trim().isNotEmpty ?? false);
-    return hasName && user.allPhotos.isNotEmpty;
+    if (!hasName || user.allPhotos.isEmpty) return false;
+
+    if (user.age != null && user.age! < AgeValidator.minimumAge) {
+      return false;
+    }
+
+    return true;
   }
 
   /// Records a swipe action. Returns a match when both users liked each other.

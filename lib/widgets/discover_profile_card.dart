@@ -2,6 +2,7 @@ import 'package:rizzexai/theme/app_typography.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import '../models/user.dart';
+import '../utils/image_url_utils.dart';
 
 class DiscoverProfileCard extends StatelessWidget {
   final User user;
@@ -60,9 +61,9 @@ class DiscoverProfileCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (photoUrl != null)
+                  if (isValidNetworkImageUrl(photoUrl))
                     CachedNetworkImage(
-                      imageUrl: photoUrl,
+                      imageUrl: photoUrl!,
                       fit: BoxFit.cover,
                       placeholder: (_, __) => Container(
                         color: const Color(0xFFF0F0F0),

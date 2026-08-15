@@ -6,11 +6,21 @@ class AppConfig {
 
   static const String authRedirectUrl = '$androidPackageId://login-callback/';
 
-  /// Replace with your hosted privacy policy before Play Store submission.
-  static const String privacyPolicyUrl = 'https://rizzexai.com/privacy';
+  static const String websiteBaseUrl = 'https://rizzex-ai-website.vercel.app';
 
-  /// Replace with your hosted terms of service before Play Store submission.
-  static const String termsOfServiceUrl = 'https://rizzexai.com/terms';
+  static const String privacyPolicyUrl = '$websiteBaseUrl/privacy';
 
-  static const String supportEmail = 'support@rizzexai.com';
+  static const String termsOfServiceUrl = '$websiteBaseUrl/terms';
+
+  static const String childSafetyStandardsUrl = '$websiteBaseUrl/child-safety';
+
+  static const String externalDeleteAccountUrl = '$websiteBaseUrl/delete-account';
+
+  static const String supportEmail = 'tanbusin@gmail.com';
+
+  static const String secondaryContactEmail = 'tanbusin@gmail.com';
+
+  static const String developerName = 'Tanishq Pratap';
+
+  static const String developerLocation = 'Bengaluru, Karnataka, India';
 }

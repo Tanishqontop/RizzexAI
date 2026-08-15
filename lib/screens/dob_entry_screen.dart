@@ -1,8 +1,8 @@
 import 'package:rizzexai/theme/app_typography.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart'; // NEW: Import Supabase
-import '../services/profile_service.dart'; // NEW: Import ProfileService
-import '../widgets/onboarding_skip_button.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/profile_service.dart';
+import '../utils/age_validator.dart';
 import 'notification_prompt_screen.dart';
 
 class DobEntryScreen extends StatefulWidget {
@@ -13,7 +13,6 @@ class DobEntryScreen extends StatefulWidget {
 }
 
 class _DobEntryScreenState extends State<DobEntryScreen> {
-  // NEW: Add service, user, and loading state variables
   final _profileService = ProfileService();
   final _currentUser = Supabase.instance.client.auth.currentUser;
   bool _loading = false;
@@ -25,13 +24,12 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
   bool get _hasValidDate => _selectedDate != null;
 
   Future<void> _selectDate(BuildContext context) async {
+    final now = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate:
-          DateTime.now().subtract(const Duration(days: 3650)), // 10 years
-      firstDate:
-          DateTime.now().subtract(const Duration(days: 36500)), // 100 years
-      lastDate: DateTime.now().subtract(const Duration(days: 3650)), // 10 years
+      initialDate: AgeValidator.defaultBirthDatePickerInitial(reference: now),
+      firstDate: AgeValidator.earliestAllowedBirthDate(reference: now),
+      lastDate: AgeValidator.latestAllowedBirthDate(reference: now),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -49,20 +47,45 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
-        _calculatedAge = DateTime.now().year -
-            picked.year -
-            ((DateTime.now().month < picked.month ||
-                    (DateTime.now().month == picked.month &&
-                        DateTime.now().day < picked.day))
-                ? 1
-                : 0);
+        _calculatedAge = AgeValidator.calculateAge(picked, reference: now);
       });
     }
   }
 
-  // NEW: Method to save data to Supabase and then navigate
+  bool _passesAgeGate(DateTime dob) {
+    return AgeValidator.isAtLeast18(dob);
+  }
+
+  void _showUnderAgeMessage() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'Age requirement',
+          style: AppFonts.display(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          AgeValidator.underAgeMessage,
+          style: AppFonts.geist(fontSize: 16),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _saveDobAndContinue() async {
     if (!_hasValidDate || _currentUser == null || _loading) return;
+
+    if (!_passesAgeGate(_selectedDate!)) {
+      _showUnderAgeMessage();
+      return;
+    }
 
     setState(() => _loading = true);
 
@@ -88,16 +111,13 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
     }
   }
 
-  void _skipAndContinue() {
-    if (!mounted || _loading) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const NotificationPromptScreen()),
-    );
-  }
-
   void _showAgeConfirmation() {
     if (_selectedDate == null || _calculatedAge == null) return;
+
+    if (!_passesAgeGate(_selectedDate!)) {
+      _showUnderAgeMessage();
+      return;
+    }
 
     showDialog(
       context: context,
@@ -115,7 +135,6 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              // NEW: Call the save function instead of navigating directly
               _saveDobAndContinue();
             },
             child: const Text('Confirm'),
@@ -148,10 +167,7 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: OnboardingSkipLayout(
-          onSkip: _skipAndContinue,
-          skipEnabled: !_loading,
-          child: Stack(
+        child: Stack(
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -231,7 +247,7 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
                           ),
                         const SizedBox(height: 24),
                         Text(
-                          'We use this to calculate the age on your profile.',
+                          AgeValidator.onboardingNotice,
                           style: AppFonts.geist(
                               fontSize: 14, color: Colors.grey[600]),
                         ),
@@ -270,7 +286,6 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
                             blurRadius: 10,
                             offset: const Offset(0, 6))
                       ]),
-                  // NEW: Add a loading indicator for when the save is in progress
                   child: _loading
                       ? const Padding(
                           padding: EdgeInsets.all(18.0),
@@ -289,7 +304,6 @@ class _DobEntryScreenState extends State<DobEntryScreen> {
               ),
             ),
           ],
-        ),
         ),
       ),
     );

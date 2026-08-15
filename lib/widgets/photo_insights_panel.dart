@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:rizzexai/theme/app_typography.dart';
+import '../utils/image_url_utils.dart';
 import '../services/profile_service.dart';
 
 class PhotoInsightsPanel extends StatelessWidget {
@@ -261,8 +262,11 @@ List<String> photoUrlsFromProfile(Map<String, dynamic>? profile) {
   void addFrom(dynamic raw) {
     if (raw is! List) return;
     for (final item in raw) {
-      final url = item.toString();
-      if (url.isEmpty || ProfileService.isProfileVideoUrl(url)) continue;
+      final url = item.toString().trim();
+      if (!isValidNetworkImageUrl(url) ||
+          ProfileService.isProfileVideoUrl(url)) {
+        continue;
+      }
       if (!urls.contains(url)) urls.add(url);
     }
   }
@@ -271,9 +275,8 @@ List<String> photoUrlsFromProfile(Map<String, dynamic>? profile) {
   addFrom(profile['profile_photos']);
 
   final avatar = profile['avatar_url']?.toString();
-  if (avatar != null &&
-      avatar.isNotEmpty &&
-      !urls.contains(avatar) &&
+  if (isValidNetworkImageUrl(avatar) &&
+      !urls.contains(avatar!) &&
       !ProfileService.isProfileVideoUrl(avatar)) {
     urls.insert(0, avatar);
   }

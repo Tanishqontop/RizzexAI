@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../utils/age_validator.dart';
+import '../utils/image_url_utils.dart';
 import 'dart:developer' as developer;
 
 class ProfileService {
@@ -147,15 +149,12 @@ class ProfileService {
       if (firstName != null) updateData['first_name'] = firstName;
       if (lastName != null) updateData['last_name'] = lastName;
       if (dob != null) {
+        if (!AgeValidator.isAtLeast18(dob)) {
+          throw Exception(AgeValidator.underAgeMessage);
+        }
         updateData['date_of_birth'] =
             '${dob.year}-${dob.month.toString().padLeft(2, '0')}-${dob.day.toString().padLeft(2, '0')}';
-        final now = DateTime.now();
-        int age = now.year - dob.year;
-        if (now.month < dob.month ||
-            (now.month == dob.month && now.day < dob.day)) {
-          age--;
-        }
-        updateData['age'] = age;
+        updateData['age'] = AgeValidator.calculateAge(dob);
       }
       if (notificationsEnabled != null)
         updateData['notifications_enabled'] = notificationsEnabled;
@@ -239,19 +238,75 @@ class ProfileService {
   }
 
   Future<bool> isOnboardingCompleted(String userId) async {
-    final profile = await getProfile(userId);
-    if (profile == null) return false;
+    try {
+      final profile = await getProfile(userId);
+      if (profile == null) return false;
 
-    if (profile['onboarding_completed'] == true) return true;
+      if (profile['onboarding_completed'] == true) return true;
 
-    // Returning users who filled out their profile before this flag existed.
+      if (!_isLegacyProfileComplete(profile)) return false;
+
+      try {
+        await upsertProfile(userId: userId, onboardingCompleted: true);
+      } catch (e) {
+        developer.log('Could not backfill onboarding_completed: $e');
+      }
+      return true;
+    } catch (e) {
+      developer.log('Onboarding check failed, using fallback: $e', error: e);
+      return _fallbackOnboardingCompleted(userId);
+    }
+  }
+
+  Future<bool> _fallbackOnboardingCompleted(String userId) async {
+    try {
+      final row = await _supabase
+          .from('profiles')
+          .select(
+            'onboarding_completed, first_name, media_urls, profile_photos, '
+            'avatar_url, date_of_birth, dob, age',
+          )
+          .eq('id', userId)
+          .maybeSingle();
+      if (row == null) return false;
+      if (row['onboarding_completed'] == true) return true;
+      return _isLegacyProfileComplete(row);
+    } catch (e) {
+      developer.log('Fallback onboarding check failed: $e', error: e);
+      return false;
+    }
+  }
+
+  bool _isLegacyProfileComplete(Map<String, dynamic> profile) {
     final firstName = profile['first_name'] as String?;
-    final mediaUrls = profile['media_urls'] as List?;
-    final profilePhotos = profile['profile_photos'] as List?;
     final hasName = firstName != null && firstName.trim().isNotEmpty;
-    final hasMedia = (mediaUrls != null && mediaUrls.isNotEmpty) ||
-        (profilePhotos != null && profilePhotos.isNotEmpty);
+    if (!hasName || !_profileHasMedia(profile) || !_profileHasValidAge(profile)) {
+      return false;
+    }
+    return true;
+  }
 
-    return hasName && hasMedia;
+  bool _profileHasMedia(Map<String, dynamic> profile) {
+    bool listHasPhoto(List? urls) {
+      if (urls == null) return false;
+      return urls.any((item) => isValidNetworkImageUrl(item?.toString()));
+    }
+
+    return listHasPhoto(profile['media_urls'] as List?) ||
+        listHasPhoto(profile['profile_photos'] as List?) ||
+        isValidNetworkImageUrl(profile['avatar_url']?.toString());
+  }
+
+  bool _profileHasValidAge(Map<String, dynamic> profile) {
+    final dobRaw = profile['date_of_birth'] ?? profile['dob'];
+    if (dobRaw != null && dobRaw.toString().trim().isNotEmpty) {
+      final dob = DateTime.tryParse(dobRaw.toString());
+      if (dob != null) return AgeValidator.isAtLeast18(dob);
+    }
+
+    final age = profile['age'];
+    if (age is num && age >= AgeValidator.minimumAge) return true;
+
+    return false;
   }
 }

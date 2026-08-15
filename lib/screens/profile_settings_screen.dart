@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../config/app_config.dart';
 import '../services/auth_service.dart';
 import 'auth_wrapper.dart';
+import 'delete_account_screen.dart';
 import 'profile_edit_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
@@ -14,8 +15,6 @@ class ProfileSettingsScreen extends StatefulWidget {
 }
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
-  bool _isDeleting = false;
-
   Future<void> _openUrl(String url) async {
     final uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
@@ -70,49 +69,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
-  Future<void> _deleteAccount() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete account?'),
-        content: const Text(
-          'This permanently deletes your profile, matches, messages, and photos. This cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+  void _openDeleteAccount() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const DeleteAccountScreen()),
     );
-
-    if (confirmed != true || !mounted) return;
-
-    setState(() => _isDeleting = true);
-    try {
-      await AuthService.deleteAccount();
-      if (mounted) {
-        navigateToAuthRoot(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Could not delete account. Run the latest Supabase migration or contact support. ($e)',
-            ),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isDeleting = false);
-    }
   }
 
   @override
@@ -162,6 +123,22 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             onTap: () => _openUrl(AppConfig.termsOfServiceUrl),
           ),
           ListTile(
+            leading: const Icon(Icons.shield_outlined),
+            title: Text('Child Safety Standards', style: AppFonts.geist()),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => _openUrl(AppConfig.childSafetyStandardsUrl),
+          ),
+          ListTile(
+            leading: const Icon(Icons.link_outlined),
+            title: Text('Delete Account (Web)', style: AppFonts.geist()),
+            subtitle: Text(
+              'Alternative request form if you cannot use in-app deletion',
+              style: AppFonts.geist(fontSize: 12, color: Colors.grey[600]),
+            ),
+            trailing: const Icon(Icons.open_in_new, size: 18),
+            onTap: () => _openUrl(AppConfig.externalDeleteAccountUrl),
+          ),
+          ListTile(
             leading: const Icon(Icons.mail_outline),
             title: Text('Contact Support', style: AppFonts.geist()),
             trailing: const Icon(Icons.chevron_right),
@@ -180,13 +157,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             onTap: _logout,
           ),
           ListTile(
-            leading: _isDeleting
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.delete_forever_outlined, color: Colors.red),
+            leading: const Icon(Icons.delete_forever_outlined, color: Colors.red),
             title: Text(
               'Delete Account',
               style: AppFonts.geist(
@@ -194,7 +165,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 color: Colors.red,
               ),
             ),
-            onTap: _isDeleting ? null : _deleteAccount,
+            onTap: _openDeleteAccount,
           ),
         ],
       ),

@@ -6,6 +6,7 @@ Future<void> showReportUserSheet(
   BuildContext context, {
   required String userId,
   required String userName,
+  String? matchId,
   VoidCallback? onCompleted,
 }) async {
   const reasons = [
@@ -13,6 +14,7 @@ Future<void> showReportUserSheet(
     'Harassment or bullying',
     'Spam or scam',
     'Underage user',
+    'Child sexual abuse or exploitation',
     'Other',
   ];
 
@@ -48,7 +50,7 @@ Future<void> showReportUserSheet(
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Tell us what happened. Reports are reviewed by our team.',
+                  'Tell us what happened. They will be removed from your feed and chats only.',
                   style: AppFonts.geist(
                     fontSize: 14,
                     color: const Color(0xFF6B6B6B),
@@ -88,6 +90,7 @@ Future<void> showReportUserSheet(
                           reportedUserId: userId,
                           reason: selectedReason,
                           details: detailsController.text,
+                          matchId: matchId,
                         );
                         if (context.mounted) Navigator.pop(context, true);
                       } catch (e) {
@@ -118,7 +121,9 @@ Future<void> showReportUserSheet(
   if (submitted == true && context.mounted) {
     onCompleted?.call();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Report submitted. Thank you.')),
+      SnackBar(
+        content: Text('$userName has been reported and hidden from your feed'),
+      ),
     );
   }
 }
@@ -132,7 +137,7 @@ Future<bool> confirmBlockUser(
     builder: (context) => AlertDialog(
       title: Text('Block $userName?'),
       content: const Text(
-        'They will no longer appear in your feed or chats, and your match will be removed.',
+        'They will no longer appear in your feed or chats. Other people can still see their profile.',
       ),
       actions: [
         TextButton(
@@ -154,13 +159,14 @@ Future<void> blockUserAndNotify(
   BuildContext context, {
   required String userId,
   required String userName,
+  String? matchId,
   VoidCallback? onBlocked,
 }) async {
   final confirmed = await confirmBlockUser(context, userName: userName);
   if (!confirmed || !context.mounted) return;
 
   try {
-    await SafetyService().blockUser(userId);
+    await SafetyService().blockUser(userId, matchId: matchId);
     onBlocked?.call();
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -180,14 +186,18 @@ Future<void> showSafetyActionsSheet(
   BuildContext context, {
   required String userId,
   required String userName,
+  String? matchId,
   VoidCallback? onBlocked,
 }) async {
+  final hostContext = context;
+  final onRemoved = onBlocked;
+
   await showModalBottomSheet<void>(
     context: context,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (context) => SafeArea(
+    builder: (sheetContext) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -195,25 +205,34 @@ Future<void> showSafetyActionsSheet(
             leading: const Icon(Icons.flag_outlined),
             title: const Text('Report'),
             onTap: () {
-              Navigator.pop(context);
-              showReportUserSheet(
-                context,
-                userId: userId,
-                userName: userName,
-              );
+              Navigator.pop(sheetContext);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!hostContext.mounted) return;
+                showReportUserSheet(
+                  hostContext,
+                  userId: userId,
+                  userName: userName,
+                  matchId: matchId,
+                  onCompleted: onRemoved,
+                );
+              });
             },
           ),
           ListTile(
             leading: const Icon(Icons.block, color: Colors.red),
             title: const Text('Block', style: TextStyle(color: Colors.red)),
-            onTap: () async {
-              Navigator.pop(context);
-              await blockUserAndNotify(
-                context,
-                userId: userId,
-                userName: userName,
-                onBlocked: onBlocked,
-              );
+            onTap: () {
+              Navigator.pop(sheetContext);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!hostContext.mounted) return;
+                blockUserAndNotify(
+                  hostContext,
+                  userId: userId,
+                  userName: userName,
+                  matchId: matchId,
+                  onBlocked: onBlocked,
+                );
+              });
             },
           ),
         ],

@@ -15,6 +15,7 @@ class HomeScreen extends StatefulWidget {
 
   static const feedTabIndex = 0;
   static const discoverTabIndex = 1;
+  static const chatTabIndex = 2;
   // v2: was 4 when AI Features tab existed
   static const profileTabIndex = 3;
 
@@ -30,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   StreamSubscription<bool>? _unreadSubscription;
   final GlobalKey<DiscoverScreenState> _discoverKey =
       GlobalKey<DiscoverScreenState>();
+  final GlobalKey<ChatScreenState> _chatKey = GlobalKey<ChatScreenState>();
   final UnreadMessagesService _unreadMessagesService =
       UnreadMessagesService.instance;
 
@@ -43,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
       DiscoverScreen(key: _discoverKey),
       // v2: AI Features tab
       // const AIFeaturesScreen(),
-      const ChatScreen(),
+      ChatScreen(key: _chatKey),
       const MyProfileScreen(),
     ];
     _currentIndex = widget.initialTabIndex.clamp(0, _screens.length - 1);
@@ -76,6 +78,9 @@ class _HomeScreenState extends State<HomeScreen> {
           });
           if (index == HomeScreen.discoverTabIndex) {
             _discoverKey.currentState?.refresh();
+          }
+          if (index == HomeScreen.chatTabIndex) {
+            _chatKey.currentState?.refresh();
           }
         },
       ),

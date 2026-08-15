@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:rizzexai/theme/app_typography.dart';
 import '../models/user.dart';
+import '../utils/image_url_utils.dart';
 import '../utils/profile_share.dart';
 
 class FeedProfileView extends StatelessWidget {
@@ -324,7 +325,7 @@ class _HeroPhoto extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            if (photoUrl != null)
+            if (isValidNetworkImageUrl(photoUrl))
               CachedNetworkImage(
                 imageUrl: photoUrl!,
                 fit: BoxFit.cover,
